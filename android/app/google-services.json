@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "154586994972",
+    "project_id": "gessports-eb9e3",
+    "storage_bucket": "gessports-eb9e3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:154586994972:android:ce65a4d294fc08ae9c02d9",
+        "android_client_info": {
+          "package_name": "com.example.login_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWCmX9eQ6PhRd_fVzvGwVJguJN57TY4vo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
