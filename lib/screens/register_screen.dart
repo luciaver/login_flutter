@@ -1,7 +1,8 @@
-
+import 'package:flutter/material.dart';
+import 'package:login_flutter/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 
-import '../models/user_database.dart';
+
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,6 +17,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _confirmPasswordCtrl = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  String _selectedTipo = 'jugador';
+
+  final List<Map<String, dynamic>> _tiposUsuario = [
+    {'value': 'jugador', 'label': 'Jugador', 'icon': Icons.sports_soccer},
+    {'value': 'entrenador', 'label': 'Entrenador', 'icon': Icons.sports},
+    {'value': 'arbitro', 'label': 'Árbitro', 'icon': Icons.sports_score},
+  ];
 
   @override
   void dispose() {
@@ -51,10 +59,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    if (UserDatabase.registerUser(email, password)) {
-      _showMessage('¡Registro exitoso! Ahora puedes iniciar sesión', Colors.green);
+    if (UserDatabase.registerUser(email, password, _selectedTipo)) {
+      _showMessage('¡Registro exitoso!', Colors.green);
       Future.delayed(const Duration(seconds: 1), () {
-        Navigator.pop(context);
+        // Navegar según el tipo de usuario registrado
+        if (_selectedTipo == 'admin') {
+          Navigator.pushReplacementNamed(context, '/admin');
+        } else {
+          Navigator.pushReplacementNamed(
+            context,
+            '/user',
+            arguments: {'tipo': _selectedTipo, 'email': email},
+          );
+        }
       });
     } else {
       _showMessage('Este correo ya está registrado', Colors.red);
@@ -74,6 +91,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LoginScreen(),
+              ),
+            );
+          },
+        ),
+        title: const Text('Registro'),
+        backgroundColor: Colors.green.shade700,
+        foregroundColor: Colors.white,
+        centerTitle: true,
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -179,6 +213,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade400),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            value: _selectedTipo,
+                            icon: Icon(Icons.arrow_drop_down,
+                                color: Colors.green.shade700),
+                            style: TextStyle(
+                              color: Colors.grey.shade800,
+                              fontSize: 16,
+                            ),
+                            items: _tiposUsuario.map((tipo) {
+                              return DropdownMenuItem<String>(
+                                value: tipo['value'],
+                                child: Row(
+                                  children: [
+                                    Icon(tipo['icon'],
+                                        color: Colors.green.shade700),
+                                    const SizedBox(width: 12),
+                                    Text(tipo['label']),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedTipo = value!;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
@@ -205,7 +277,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const Text('¿Ya tienes cuenta? '),
                           TextButton(
                             onPressed: () {
-                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginScreen(),
+                                ),
+                              );
                             },
                             child: const Text(
                               'Inicia Sesión',
