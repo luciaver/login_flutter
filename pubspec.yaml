@@ -1,5 +1,5 @@
 name: login_flutter
-description: Aplicación de gestión deportiva con Firebase
+description: "GesSport - Gestión de Deportes"
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -11,23 +11,24 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Firebase - IMPORTANTE: estas 3 dependencias son necesarias
-  firebase_core: ^4.4.0
-  firebase_auth: ^6.1.4
-  cloud_firestore: ^6.1.2
+  # Firebase
+  firebase_core: ^3.8.1
+  firebase_auth: ^5.3.4
+  cloud_firestore: ^5.5.2
 
-  # Almacenamiento local
-  shared_preferences: ^2.2.2
+  # State Management
+  provider: ^6.1.2
+
+  # Local Storage
+  shared_preferences: ^2.3.3
+
+  # UI
+  cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true
-
-  assets:
-    - assets/images/
-    - assets/data/
-
