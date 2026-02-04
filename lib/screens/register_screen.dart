@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:login_flutter/screens/login_screen.dart';
-import 'package:flutter/material.dart';
-
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'login_screen.dart';
+import 'admin_screen.dart';
+import 'users_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -12,14 +13,24 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+
+  final TextEditingController _nombreCtrl = TextEditingController();
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
   final TextEditingController _confirmPasswordCtrl = TextEditingController();
+
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  String _selectedTipo = 'jugador';
+  bool _isLoading = false;
+  String _selectedRol = 'jugador';
 
-  final List<Map<String, dynamic>> _tiposUsuario = [
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Lista de roles
+  final List<Map<String, dynamic>> _rolesUsuario = [
     {'value': 'jugador', 'label': 'Jugador', 'icon': Icons.sports_soccer},
     {'value': 'entrenador', 'label': 'Entrenador', 'icon': Icons.sports},
     {'value': 'arbitro', 'label': 'Árbitro', 'icon': Icons.sports_score},
@@ -27,18 +38,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    _nombreCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmPasswordCtrl.dispose();
     super.dispose();
   }
 
-  void _register() {
+  // FUNCIÓN REGISTRAR
+  void _register() async {
+    final nombre = _nombreCtrl.text.trim();
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
     final confirmPassword = _confirmPasswordCtrl.text;
 
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    // Validaciones
+    if (nombre.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       _showMessage('Por favor completa todos los campos', Colors.orange);
       return;
     }
@@ -49,8 +64,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (password.length < 6) {
-      _showMessage(
-          'La contraseña debe tener al menos 6 caracteres', Colors.orange);
+      _showMessage('La contraseña debe tener al menos 6 caracteres', Colors.orange);
       return;
     }
 
@@ -59,22 +73,67 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    if (UserDatabase.registerUser(email, password, _selectedTipo)) {
-      _showMessage('¡Registro exitoso!', Colors.green);
-      Future.delayed(const Duration(seconds: 1), () {
-        // Navegar según el tipo de usuario registrado
-        if (_selectedTipo == 'admin') {
-          Navigator.pushReplacementNamed(context, '/admin');
-        } else {
-          Navigator.pushReplacementNamed(
-            context,
-            '/user',
-            arguments: {'tipo': _selectedTipo, 'email': email},
-          );
-        }
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // 2. Guardar datos en Firestore
+      await _firestore.collection('usuarios').doc(userCredential.user!.uid).set({
+        'nombre': nombre,
+        'email': email,
+        'rol': _selectedRol,
       });
-    } else {
-      _showMessage('Este correo ya está registrado', Colors.red);
+
+      _showMessage('¡Registro exitoso!', Colors.green);
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (!mounted) return;
+
+      // 3. Navegar según el rol
+      if (_selectedRol == 'admin') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserScreen(
+              rol: _selectedRol,
+              email: email,
+              nombre: nombre,
+            ),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String mensaje = 'Error al registrar usuario';
+
+      if (e.code == 'email-already-in-use') {
+        mensaje = 'Este correo ya está registrado';
+      } else if (e.code == 'invalid-email') {
+        mensaje = 'Correo electrónico no válido';
+      } else if (e.code == 'weak-password') {
+        mensaje = 'La contraseña es muy débil';
+      }
+
+      _showMessage(mensaje, Colors.red);
+    } catch (e) {
+      _showMessage('Error: ${e.toString()}', Colors.red);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -95,11 +154,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) => const LoginScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
             );
           },
         ),
@@ -153,6 +210,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 32),
+
+                      // Nombre
+                      TextField(
+                        controller: _nombreCtrl,
+                        decoration: InputDecoration(
+                          labelText: 'Nombre completo',
+                          prefixIcon: const Icon(Icons.person),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Email
                       TextField(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
@@ -165,6 +237,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
+
+                      // Contraseña
                       TextField(
                         controller: _passwordCtrl,
                         obscureText: _obscurePassword,
@@ -189,6 +263,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
+
+                      // Confirmar contraseña
                       TextField(
                         controller: _confirmPasswordCtrl,
                         obscureText: _obscureConfirmPassword,
@@ -203,8 +279,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _obscureConfirmPassword =
-                                !_obscureConfirmPassword;
+                                _obscureConfirmPassword = !_obscureConfirmPassword;
                               });
                             },
                           ),
@@ -214,6 +289,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
+
+                      // Selector de rol
                       Container(
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade400),
@@ -223,40 +300,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             isExpanded: true,
-                            value: _selectedTipo,
-                            icon: Icon(Icons.arrow_drop_down,
-                                color: Colors.green.shade700),
+                            value: _selectedRol,
+                            icon: Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.green.shade700,
+                            ),
                             style: TextStyle(
                               color: Colors.grey.shade800,
                               fontSize: 16,
                             ),
-                            items: _tiposUsuario.map((tipo) {
+                            items: _rolesUsuario.map((rol) {
                               return DropdownMenuItem<String>(
-                                value: tipo['value'],
+                                value: rol['value'],
                                 child: Row(
                                   children: [
-                                    Icon(tipo['icon'],
-                                        color: Colors.green.shade700),
+                                    Icon(
+                                      rol['icon'],
+                                      color: Colors.green.shade700,
+                                    ),
                                     const SizedBox(width: 12),
-                                    Text(tipo['label']),
+                                    Text(rol['label']),
                                   ],
                                 ),
                               );
                             }).toList(),
                             onChanged: (value) {
                               setState(() {
-                                _selectedTipo = value!;
+                                _selectedRol = value!;
                               });
                             },
                           ),
                         ),
                       ),
                       const SizedBox(height: 24),
+
+                      // Botón registrarse
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: _register,
+                          onPressed: _isLoading ? null : _register,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green.shade700,
                             foregroundColor: Colors.white,
@@ -264,20 +347,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
+                          child: _isLoading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text(
                             'Registrarse',
                             style: TextStyle(fontSize: 18),
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
+
+                      // Login
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text('¿Ya tienes cuenta? '),
                           TextButton(
                             onPressed: () {
-                              Navigator.push(
+                              Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const LoginScreen(),

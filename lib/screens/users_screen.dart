@@ -1,25 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'login_screen.dart';
 
 class UserScreen extends StatelessWidget {
-  const UserScreen({super.key});
+  final String rol;
+  final String email;
+  final String nombre;
+
+  const UserScreen({
+    super.key,
+    required this.rol,
+    required this.email,
+    required this.nombre,
+  });
+
+  Future<void> _logout(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      if (!context.mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al cerrar sesión: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final tipo = args?['tipo'] ?? 'usuario';
-    final email = args?['email'] ?? '';
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('GesSport'),
         backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/');
-            },
+            onPressed: () => _logout(context),
           ),
         ],
       ),
@@ -34,7 +60,7 @@ class UserScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Hola',
+              '¡Hola ${nombre.isNotEmpty ? nombre : "Usuario"}!',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -43,7 +69,7 @@ class UserScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Tipo de usuario: ${tipo.toUpperCase()}',
+              'Rol: ${rol.toUpperCase()}',
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.grey.shade600,

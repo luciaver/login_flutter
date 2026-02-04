@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:login_flutter/screens/register_screen.dart';
-
+import 'register_screen.dart';
+import 'admin_screen.dart';
+import 'users_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,47 +14,47 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controladores para los campos de texto
+
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
 
-  // Variables de estado
-  bool _obscurePassword = true; // Para mostrar/ocultar contraseña
-  bool _rememberPassword = false; // Para el checkbox de recordar contraseña
-  final FirebaseAuth _auth = FirebaseAuth.instance; // Para Firebase
+  // Variables
+  bool _obscurePassword = true;
+  bool _rememberPassword = false;
+  bool _isLoading = false;
+
+  // Firebase
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedCredentials(); // Cargar credenciales guardadas al iniciar
+    _loadSavedCredentials();
   }
 
-  // Cargar credenciales si el usuario las guardó antes
+  // Cargar email guardado
   Future<void> _loadSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     final savedEmail = prefs.getString('saved_email');
-    final savedPassword = prefs.getString('saved_password');
     final remember = prefs.getBool('remember_password') ?? false;
 
-    if (remember && savedEmail != null && savedPassword != null) {
+    if (remember && savedEmail != null) {
       setState(() {
         _emailCtrl.text = savedEmail;
-        _passwordCtrl.text = savedPassword;
         _rememberPassword = true;
       });
     }
   }
 
-  // Guardar credenciales si el usuario marcó el checkbox
+  // Guardar email
   Future<void> _saveCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     if (_rememberPassword) {
       await prefs.setString('saved_email', _emailCtrl.text.trim());
-      await prefs.setString('saved_password', _passwordCtrl.text);
       await prefs.setBool('remember_password', true);
     } else {
       await prefs.remove('saved_email');
-      await prefs.remove('saved_password');
       await prefs.setBool('remember_password', false);
     }
   }
@@ -64,66 +66,165 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // Función para hacer login
+  // FUNCIÓN DE LOGIN
   void _login() async {
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
 
-    // Validar que los campos no estén vacíos
+    // Validar campos
     if (email.isEmpty || password.isEmpty) {
       _showMessage('Por favor completa todos los campos', Colors.orange);
       return;
     }
 
-    // Buscar usuario en la base de datos
-    final user = UserDatabase.loginUser(email, password);
+    setState(() {
+      _isLoading = true;
+    });
 
-    if (user != null) {
-      await _saveCredentials(); // Guardar si marcó recordar
-      _showMessage('¡Bienvenido a GesSport!', Colors.green);
+    try {
+      // 1. Iniciar sesión
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-      // Esperar 1 segundo y navegar según el tipo de usuario
-      Future.delayed(const Duration(seconds: 1), () {
-        if (user.tipo == 'admin') {
-          Navigator.pushReplacementNamed(context, '/admin');
-        } else {
-          Navigator.pushReplacementNamed(
+      // 2. Obtener datos del usuario
+      DocumentSnapshot userDoc = await _firestore
+          .collection('usuarios')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      // 3. Guardar credenciales
+      await _saveCredentials();
+
+      if (userDoc.exists) {
+        // 4. Obtener datos
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        String rol = userData['rol'] ?? 'jugador';
+        String nombre = userData['nombre'] ?? '';
+
+        _showMessage('¡Bienvenido a GesSport!', Colors.green);
+        await Future.delayed(const Duration(seconds: 1));
+
+        if (!mounted) return;
+
+        // 5. Navegar según el rol
+        if (rol == 'admin') {
+          Navigator.pushReplacement(
             context,
-            '/user',
-            arguments: {'tipo': user.tipo, 'email': email},
+            MaterialPageRoute(builder: (context) => const AdminScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserScreen(
+                rol: rol,
+                email: email,
+                nombre: nombre,
+              ),
+            ),
           );
         }
-      });
-    } else {
-      _showMessage('Correo o contraseña incorrectos', Colors.red);
-    }
-  }
+      }
+    } on FirebaseAuthException catch (e) {
+      String mensaje = 'Error al iniciar sesión';
 
-  // Función para recuperar contraseña
-  Future<void> _forgotPassword() async {
-    final email = _emailCtrl.text.trim();
+      if (e.code == 'user-not-found') {
+        mensaje = 'No existe una cuenta con este correo';
+      } else if (e.code == 'wrong-password') {
+        mensaje = 'Contraseña incorrecta';
+      } else if (e.code == 'invalid-email') {
+        mensaje = 'Correo electrónico no válido';
+      } else if (e.code == 'invalid-credential') {
+        mensaje = 'Credenciales inválidas';
+      }
 
-    if (email.isEmpty) {
-      _showMessage('Por favor ingresa tu correo electrónico', Colors.orange);
-      return;
-    }
-
-    // Verificar si el correo existe
-    if (!UserDatabase.emailExists(email)) {
-      _showMessage('Este correo no está registrado', Colors.red);
-      return;
-    }
-
-    // Enviar correo de recuperación con Firebase
-    try {
-      await _auth.sendPasswordResetEmail(email: email);
-      _showMessage('Se ha enviado un correo de recuperación', Colors.green);
+      _showMessage(mensaje, Colors.red);
     } catch (e) {
-      _showMessage('Error al enviar el correo', Colors.red);
+      _showMessage('Error: ${e.toString()}', Colors.red);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  // Mostrar mensajes en pantalla
+  // FUNCION RECUPERAR CONTRASEÑA
+  Future<void> _forgotPassword() async {
+    final emailController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Recuperar Contraseña'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Ingresa tu correo y te enviaremos un enlace para cambiar tu contraseña',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: 'Correo electrónico',
+                prefixIcon: const Icon(Icons.email),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+
+              if (email.isEmpty) {
+                _showMessage('Por favor ingresa tu correo', Colors.orange);
+                return;
+              }
+
+              try {
+                await _auth.sendPasswordResetEmail(email: email);
+                Navigator.pop(context);
+                _showMessage(
+                  'Se ha enviado un correo de recuperación',
+                  Colors.green,
+                );
+              } on FirebaseAuthException catch (e) {
+                String mensaje = 'Error al enviar el correo';
+
+                if (e.code == 'user-not-found') {
+                  mensaje = 'No existe una cuenta con este correo';
+                } else if (e.code == 'invalid-email') {
+                  mensaje = 'Correo electrónico no válido';
+                }
+
+                _showMessage(mensaje, Colors.red);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Enviar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Mostrar mensajes
   void _showMessage(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -166,15 +267,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Icono
                       Icon(
                         Icons.sports_soccer,
                         size: 80,
                         color: Colors.green.shade700,
                       ),
                       const SizedBox(height: 16),
-
-                      // Título
                       Text(
                         'GesSport',
                         style: TextStyle(
@@ -184,8 +282,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-
-                      // Subtítulo
                       Text(
                         'Gestión de Deportes',
                         style: TextStyle(
@@ -195,7 +291,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 32),
 
-                      // Campo de email
+                      // Email
                       TextField(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
@@ -209,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Campo de contraseña
+                      // Contraseña
                       TextField(
                         controller: _passwordCtrl,
                         obscureText: _obscurePassword,
@@ -235,7 +331,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 8),
 
-                      // Checkbox recordar contraseña
+                      // Recordar
                       Row(
                         children: [
                           Checkbox(
@@ -247,11 +343,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                             activeColor: Colors.green.shade700,
                           ),
-                          const Text('Recordar contraseña'),
+                          const Text('Recordar correo'),
                         ],
                       ),
 
-                      // Botón olvidaste contraseña
+                      // Olvidaste contraseña
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
@@ -267,12 +363,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Botón de iniciar sesión
+                      // Botón login
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: _login,
+                          onPressed: _isLoading ? null : _login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green.shade700,
                             foregroundColor: Colors.white,
@@ -280,7 +376,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
+                          child: _isLoading
+                              ? const CircularProgressIndicator(
+                            color: Colors.white,
+                          )
+                              : const Text(
                             'Iniciar Sesión',
                             style: TextStyle(fontSize: 18),
                           ),
@@ -288,7 +388,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Enlace a registro
+                      // Registro
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
