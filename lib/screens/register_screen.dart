@@ -13,23 +13,19 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-
   final TextEditingController _nombreCtrl = TextEditingController();
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
   final TextEditingController _confirmPasswordCtrl = TextEditingController();
-
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
   String _selectedRol = 'jugador';
 
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Lista de roles
   final List<Map<String, dynamic>> _rolesUsuario = [
     {'value': 'jugador', 'label': 'Jugador', 'icon': Icons.sports_soccer},
     {'value': 'entrenador', 'label': 'Entrenador', 'icon': Icons.sports},
@@ -45,15 +41,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // FUNCIÓN REGISTRAR
   void _register() async {
     final nombre = _nombreCtrl.text.trim();
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
     final confirmPassword = _confirmPasswordCtrl.text;
 
-    // Validaciones
-    if (nombre.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (nombre.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
       _showMessage('Por favor completa todos los campos', Colors.orange);
       return;
     }
@@ -64,7 +61,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (password.length < 6) {
-      _showMessage('La contraseña debe tener al menos 6 caracteres', Colors.orange);
+      _showMessage(
+          'La contraseña debe tener al menos 6 caracteres', Colors.orange);
       return;
     }
 
@@ -78,13 +76,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // 2. Guardar datos en Firestore
       await _firestore.collection('usuarios').doc(userCredential.user!.uid).set({
         'nombre': nombre,
         'email': email,
@@ -96,7 +92,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (!mounted) return;
 
-      // 3. Navegar según el rol
       if (_selectedRol == 'admin') {
         Navigator.pushReplacement(
           context,
@@ -279,7 +274,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             onPressed: () {
                               setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                                _obscureConfirmPassword =
+                                !_obscureConfirmPassword;
                               });
                             },
                           ),
@@ -348,7 +344,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                           child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(
+                              color: Colors.white)
                               : const Text(
                             'Registrarse',
                             style: TextStyle(fontSize: 18),

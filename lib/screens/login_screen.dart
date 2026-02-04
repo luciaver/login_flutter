@@ -14,16 +14,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
 
-  // Variables
   bool _obscurePassword = true;
   bool _rememberPassword = false;
   bool _isLoading = false;
 
-  // Firebase
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -33,7 +30,6 @@ class _LoginScreenState extends State<LoginScreen> {
     _loadSavedCredentials();
   }
 
-  // Cargar email guardado
   Future<void> _loadSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     final savedEmail = prefs.getString('saved_email');
@@ -47,7 +43,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Guardar email
   Future<void> _saveCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     if (_rememberPassword) {
@@ -66,12 +61,10 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // FUNCIÓN DE LOGIN
   void _login() async {
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
 
-    // Validar campos
     if (email.isEmpty || password.isEmpty) {
       _showMessage('Por favor completa todos los campos', Colors.orange);
       return;
@@ -98,7 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
       await _saveCredentials();
 
       if (userDoc.exists) {
-        // 4. Obtener datos
         Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
         String rol = userData['rol'] ?? 'jugador';
         String nombre = userData['nombre'] ?? '';
@@ -108,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (!mounted) return;
 
-        // 5. Navegar según el rol
+        // 4. Navegar según el rol
         if (rol == 'admin') {
           Navigator.pushReplacement(
             context,
@@ -152,7 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // FUNCION RECUPERAR CONTRASEÑA
   Future<void> _forgotPassword() async {
     final emailController = TextEditingController();
 
@@ -224,7 +215,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Mostrar mensajes
   void _showMessage(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
