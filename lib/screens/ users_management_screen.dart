@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../provider/user_provider.dart';
-import '../providers/user_provider.dart';
+
 
 class UsersManagementScreen extends StatelessWidget {
   const UsersManagementScreen({super.key});

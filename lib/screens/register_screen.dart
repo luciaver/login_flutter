@@ -30,6 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     {'value': 'jugador', 'label': 'Jugador', 'icon': Icons.sports_soccer},
     {'value': 'entrenador', 'label': 'Entrenador', 'icon': Icons.sports},
     {'value': 'arbitro', 'label': 'Árbitro', 'icon': Icons.sports_score},
+    {'value': 'admin', 'label': 'Administrador', 'icon': Icons.admin_panel_settings},
   ];
 
   @override

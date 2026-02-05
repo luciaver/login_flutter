@@ -23,7 +23,7 @@ android {
         applicationId = "com.example.login_flutter"
 
         // --- CAMBIO AQUÍ ---
-        minSdk = 21   // Cambiamos 'flutter.minSdkVersion' por 21
+        minSdk = flutter.minSdkVersion   // Cambiamos 'flutter.minSdkVersion' por 21
         // -------------------
 
         targetSdk = flutter.targetSdkVersion
