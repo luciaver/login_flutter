@@ -90,23 +90,36 @@ class _UsersManagementContent extends StatelessWidget {
                     final nombre = data['nombre'] ?? 'Sin nombre';
                     final email = data['email'] ?? 'Sin email';
                     final rol = data['rol'] ?? 'Sin rol';
+                    final edad = data['edad'] ?? 0;
+                    final telefono = data['telefono'] ?? 'Sin teléfono';
+                    final posicion = data['posicion'];
+                    final equipo = data['equipo'];
 
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: ListTile(
+                      child: ExpansionTile(
                         leading: CircleAvatar(
                           backgroundColor: _getColor(rol),
                           child: Icon(_getIcon(rol), color: Colors.white),
                         ),
                         title: Text(nombre),
                         subtitle: Text('$email\nRol: ${rol.toUpperCase()}'),
-                        isThreeLine: true,
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
                               icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () => _editUser(context, doc.id, nombre, email, rol),
+                              onPressed: () => _editUser(
+                                context,
+                                doc.id,
+                                nombre,
+                                email,
+                                rol,
+                                edad,
+                                telefono,
+                                posicion,
+                                equipo,
+                              ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
@@ -114,6 +127,27 @@ class _UsersManagementContent extends StatelessWidget {
                             ),
                           ],
                         ),
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildInfoRow(Icons.cake, 'Edad', '$edad años'),
+                                const SizedBox(height: 8),
+                                _buildInfoRow(Icons.phone, 'Teléfono', telefono),
+                                if (posicion != null) ...[
+                                  const SizedBox(height: 8),
+                                  _buildInfoRow(Icons.sports_soccer, 'Posición', posicion),
+                                ],
+                                if (equipo != null) ...[
+                                  const SizedBox(height: 8),
+                                  _buildInfoRow(Icons.groups, 'Equipo', equipo),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },
@@ -128,6 +162,20 @@ class _UsersManagementContent extends StatelessWidget {
         backgroundColor: Colors.green.shade700,
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.grey.shade600),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        Text(value),
+      ],
     );
   }
 
@@ -155,7 +203,13 @@ class _UsersManagementContent extends StatelessWidget {
     final nombreCtrl = TextEditingController();
     final emailCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
+    final edadCtrl = TextEditingController();
+    final telefonoCtrl = TextEditingController();
+    final equipoCtrl = TextEditingController();
     String selectedRol = 'jugador';
+    String? selectedPosicion = 'Portero';
+
+    final posiciones = ['Portero', 'Defensa', 'Centrocampista', 'Delantero'];
 
     showDialog(
       context: context,
@@ -183,6 +237,24 @@ class _UsersManagementContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 TextField(
+                  controller: edadCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Edad',
+                    prefixIcon: Icon(Icons.cake),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: telefonoCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Teléfono',
+                    prefixIcon: Icon(Icons.phone),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
                   controller: passwordCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Contraseña',
@@ -202,6 +274,24 @@ class _UsersManagementContent extends StatelessWidget {
                   ],
                   onChanged: (value) => setState(() => selectedRol = value!),
                 ),
+                const SizedBox(height: 16),
+                if (selectedRol == 'jugador')
+                  DropdownButton<String>(
+                    value: selectedPosicion,
+                    isExpanded: true,
+                    items: posiciones.map((pos) {
+                      return DropdownMenuItem(value: pos, child: Text(pos));
+                    }).toList(),
+                    onChanged: (value) => setState(() => selectedPosicion = value),
+                  ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: equipoCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Equipo (opcional)',
+                    prefixIcon: Icon(Icons.groups),
+                  ),
+                ),
               ],
             ),
           ),
@@ -212,12 +302,27 @@ class _UsersManagementContent extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () async {
+                final edad = int.tryParse(edadCtrl.text.trim());
+                if (edad == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Edad inválida'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
                 final userProvider = Provider.of<UserProvider>(context, listen: false);
                 bool success = await userProvider.agregarUsuario(
                   nombre: nombreCtrl.text.trim(),
                   email: emailCtrl.text.trim(),
                   password: passwordCtrl.text,
                   rol: selectedRol,
+                  edad: edad,
+                  telefono: telefonoCtrl.text.trim(),
+                  posicion: selectedRol == 'jugador' ? selectedPosicion : null,
+                  equipo: equipoCtrl.text.trim().isNotEmpty ? equipoCtrl.text.trim() : null,
                 );
                 Navigator.pop(dialogContext);
                 _showMessage(context, success ? 'Usuario agregado' : 'Error al agregar', success ? Colors.green : Colors.red);
@@ -234,40 +339,94 @@ class _UsersManagementContent extends StatelessWidget {
     );
   }
 
-  void _editUser(BuildContext context, String userId, String currentNombre, String currentEmail, String currentRol) {
+  void _editUser(
+      BuildContext context,
+      String userId,
+      String currentNombre,
+      String currentEmail,
+      String currentRol,
+      int currentEdad,
+      String currentTelefono,
+      String? currentPosicion,
+      String? currentEquipo,
+      ) {
     final nombreCtrl = TextEditingController(text: currentNombre);
+    final edadCtrl = TextEditingController(text: currentEdad.toString());
+    final telefonoCtrl = TextEditingController(text: currentTelefono);
+    final equipoCtrl = TextEditingController(text: currentEquipo ?? '');
     String selectedRol = currentRol;
+    String? selectedPosicion = currentPosicion ?? 'Portero';
+
+    final posiciones = ['Portero', 'Defensa', 'Centrocampista', 'Delantero'];
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: const Text('Editar Usuario'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nombreCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre',
-                  prefixIcon: Icon(Icons.person),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nombreCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre',
+                    prefixIcon: Icon(Icons.person),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text('Email: $currentEmail'),
-              const SizedBox(height: 16),
-              DropdownButton<String>(
-                value: selectedRol,
-                isExpanded: true,
-                items: const [
-                  DropdownMenuItem(value: 'jugador', child: Text('Jugador')),
-                  DropdownMenuItem(value: 'entrenador', child: Text('Entrenador')),
-                  DropdownMenuItem(value: 'arbitro', child: Text('Árbitro')),
-                  DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                ],
-                onChanged: (value) => setState(() => selectedRol = value!),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Text('Email: $currentEmail'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: edadCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Edad',
+                    prefixIcon: Icon(Icons.cake),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: telefonoCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Teléfono',
+                    prefixIcon: Icon(Icons.phone),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButton<String>(
+                  value: selectedRol,
+                  isExpanded: true,
+                  items: const [
+                    DropdownMenuItem(value: 'jugador', child: Text('Jugador')),
+                    DropdownMenuItem(value: 'entrenador', child: Text('Entrenador')),
+                    DropdownMenuItem(value: 'arbitro', child: Text('Árbitro')),
+                    DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                  ],
+                  onChanged: (value) => setState(() => selectedRol = value!),
+                ),
+                const SizedBox(height: 16),
+                if (selectedRol == 'jugador')
+                  DropdownButton<String>(
+                    value: selectedPosicion,
+                    isExpanded: true,
+                    items: posiciones.map((pos) {
+                      return DropdownMenuItem(value: pos, child: Text(pos));
+                    }).toList(),
+                    onChanged: (value) => setState(() => selectedPosicion = value),
+                  ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: equipoCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Equipo (opcional)',
+                    prefixIcon: Icon(Icons.groups),
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -276,11 +435,26 @@ class _UsersManagementContent extends StatelessWidget {
             ),
             ElevatedButton(
               onPressed: () async {
+                final edad = int.tryParse(edadCtrl.text.trim());
+                if (edad == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Edad inválida'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
                 final userProvider = Provider.of<UserProvider>(context, listen: false);
                 bool success = await userProvider.editarUsuario(
                   userId: userId,
                   nombre: nombreCtrl.text.trim(),
                   rol: selectedRol,
+                  edad: edad,
+                  telefono: telefonoCtrl.text.trim(),
+                  posicion: selectedRol == 'jugador' ? selectedPosicion : null,
+                  equipo: equipoCtrl.text.trim().isNotEmpty ? equipoCtrl.text.trim() : null,
                 );
                 Navigator.pop(dialogContext);
                 _showMessage(context, success ? 'Usuario actualizado' : 'Error al actualizar', success ? Colors.green : Colors.red);

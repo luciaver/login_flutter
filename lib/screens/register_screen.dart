@@ -17,11 +17,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
   final TextEditingController _confirmPasswordCtrl = TextEditingController();
+  final TextEditingController _edadCtrl = TextEditingController();
+  final TextEditingController _telefonoCtrl = TextEditingController();
+  final TextEditingController _equipoCtrl = TextEditingController();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
   String _selectedRol = 'jugador';
+  String? _selectedPosicion;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -33,12 +37,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
     {'value': 'admin', 'label': 'Administrador', 'icon': Icons.admin_panel_settings},
   ];
 
+  final List<String> _posiciones = [
+    'Portero',
+    'Defensa',
+    'Centrocampista',
+    'Delantero',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedPosicion = _posiciones[0];
+  }
+
   @override
   void dispose() {
     _nombreCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmPasswordCtrl.dispose();
+    _edadCtrl.dispose();
+    _telefonoCtrl.dispose();
+    _equipoCtrl.dispose();
     super.dispose();
   }
 
@@ -47,12 +67,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text;
     final confirmPassword = _confirmPasswordCtrl.text;
+    final edadText = _edadCtrl.text.trim();
+    final telefono = _telefonoCtrl.text.trim();
+    final equipo = _equipoCtrl.text.trim();
 
     if (nombre.isEmpty ||
         email.isEmpty ||
         password.isEmpty ||
-        confirmPassword.isEmpty) {
-      _showMessage('Por favor completa todos los campos', Colors.orange);
+        confirmPassword.isEmpty ||
+        edadText.isEmpty ||
+        telefono.isEmpty) {
+      _showMessage('Por favor completa todos los campos obligatorios', Colors.orange);
       return;
     }
 
@@ -72,6 +97,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    int? edad = int.tryParse(edadText);
+    if (edad == null || edad < 1 || edad > 120) {
+      _showMessage('Por favor ingresa una edad válida', Colors.orange);
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -82,11 +113,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: password,
       );
 
-      await _firestore.collection('usuarios').doc(userCredential.user!.uid).set({
+      // Preparar datos
+      Map<String, dynamic> userData = {
         'nombre': nombre,
         'email': email,
         'rol': _selectedRol,
-      });
+        'edad': edad,
+        'telefono': telefono,
+      };
+
+      // Agregar posición solo si es jugador
+      if (_selectedRol == 'jugador' && _selectedPosicion != null) {
+        userData['posicion'] = _selectedPosicion!;
+      }
+
+      // Agregar equipo si existe
+      if (equipo.isNotEmpty) {
+        userData['equipo'] = equipo;
+      }
+
+      await _firestore.collection('usuarios').doc(userCredential.user!.uid).set(userData);
 
       _showMessage('¡Registro exitoso!', Colors.green);
       await Future.delayed(const Duration(seconds: 1));
@@ -211,7 +257,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       TextField(
                         controller: _nombreCtrl,
                         decoration: InputDecoration(
-                          labelText: 'Nombre completo',
+                          labelText: 'Nombre completo *',
                           prefixIcon: const Icon(Icons.person),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -225,8 +271,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          labelText: 'Correo electrónico',
+                          labelText: 'Correo electrónico *',
                           prefixIcon: const Icon(Icons.email),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Edad
+                      TextField(
+                        controller: _edadCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Edad *',
+                          prefixIcon: const Icon(Icons.cake),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Teléfono
+                      TextField(
+                        controller: _telefonoCtrl,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          labelText: 'Teléfono *',
+                          prefixIcon: const Icon(Icons.phone),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -239,7 +313,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _passwordCtrl,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
-                          labelText: 'Contraseña',
+                          labelText: 'Contraseña *',
                           prefixIcon: const Icon(Icons.lock),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -265,7 +339,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _confirmPasswordCtrl,
                         obscureText: _obscureConfirmPassword,
                         decoration: InputDecoration(
-                          labelText: 'Confirmar contraseña',
+                          labelText: 'Confirmar contraseña *',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -326,6 +400,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 _selectedRol = value!;
                               });
                             },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Selector de posición (solo para jugadores)
+                      if (_selectedRol == 'jugador')
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade400),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              isExpanded: true,
+                              value: _selectedPosicion,
+                              icon: Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.green.shade700,
+                              ),
+                              hint: const Text('Selecciona posición'),
+                              style: TextStyle(
+                                color: Colors.grey.shade800,
+                                fontSize: 16,
+                              ),
+                              items: _posiciones.map((posicion) {
+                                return DropdownMenuItem<String>(
+                                  value: posicion,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.sports_soccer,
+                                        color: Colors.green.shade700,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(posicion),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedPosicion = value;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                      if (_selectedRol == 'jugador') const SizedBox(height: 16),
+
+                      // Equipo (opcional)
+                      TextField(
+                        controller: _equipoCtrl,
+                        decoration: InputDecoration(
+                          labelText: 'Equipo (opcional)',
+                          prefixIcon: const Icon(Icons.groups),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                       ),
