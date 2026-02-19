@@ -18,7 +18,6 @@ _filtroRol = nuevoFiltro;
 notifyListeners();
 }
 
-// Obtener stream de usuarios según filtro
 Stream<QuerySnapshot> obtenerUsuarios() {
 if (_filtroRol == 'todos') {
 return _firestore.collection('usuarios').snapshots();
@@ -109,7 +108,7 @@ Map<String, dynamic> userData = {
 if (rol == 'jugador' && posicion != null) {
 userData['posicion'] = posicion;
 } else {
-// Eliminar posición si ya no es jugador
+// Eliminar posición si no es jugador
 userData['posicion'] = FieldValue.delete();
 }
 

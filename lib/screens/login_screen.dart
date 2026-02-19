@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         String rol = userData['rol'] ?? 'jugador';
         String nombre = userData['nombre'] ?? '';
 
-        _showMessage('¡Bienvenido a GesSport!', const Color(0xFF6B4CE6));
+        _showMessage('¡Bienvenido a GesSport!', const Color(0xFFD946EF));
         await Future.delayed(const Duration(seconds: 1));
 
         if (!mounted) return;
@@ -209,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 Navigator.pop(context);
                 _showMessage(
                   'Se ha enviado un correo de recuperación',
-                  const Color(0xFF6B4CE6),
+                  const Color(0xFFD946EF),
                 );
               } on FirebaseAuthException catch (e) {
                 String mensaje = 'Error al enviar el correo';
@@ -224,7 +224,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6B4CE6),
+              backgroundColor: const Color(0xFFD946EF),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
             ),
@@ -256,9 +256,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF6B4CE6),
-              Color(0xFF9D7CE8),
-              Color(0xFFC4B0F5),
+              Color(0xFFD946EF),
+              Color(0xFFF0ABFC),
+              Color(0xFFFAE8FF),
             ],
           ),
         ),
@@ -271,24 +271,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo y título con diseño decorativo
+                    // Logo y título
                     Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(30),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withOpacity(0.3),
                         shape: BoxShape.circle,
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.sports_soccer,
-                          size: 80,
-                          color: Colors.white,
-                        ),
+                      child: const Icon(
+                        Icons.sports_soccer,
+                        size: 80,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -319,7 +312,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     ),
                     const SizedBox(height: 40),
 
-                    // Card de login con glassmorphism
+                    // Card de login
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.95),
@@ -349,7 +342,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 decoration: InputDecoration(
                                   labelText: 'Correo electrónico',
                                   labelStyle: TextStyle(color: Colors.grey.shade600),
-                                  prefixIcon: Icon(Icons.email_outlined, color: const Color(0xFF6B4CE6)),
+                                  prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFFD946EF)),
                                   border: InputBorder.none,
                                   contentPadding: const EdgeInsets.all(16),
                                 ),
@@ -370,7 +363,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                 decoration: InputDecoration(
                                   labelText: 'Contraseña',
                                   labelStyle: TextStyle(color: Colors.grey.shade600),
-                                  prefixIcon: Icon(Icons.lock_outline, color: const Color(0xFF6B4CE6)),
+                                  prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFFD946EF)),
                                   suffixIcon: IconButton(
                                     icon: Icon(
                                       _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
@@ -405,7 +398,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                             _rememberPassword = value ?? false;
                                           });
                                         },
-                                        activeColor: const Color(0xFF6B4CE6),
+                                        activeColor: const Color(0xFFD946EF),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(4),
                                         ),
@@ -426,7 +419,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                   child: const Text(
                                     '¿Olvidaste tu contraseña?',
                                     style: TextStyle(
-                                      color: Color(0xFF6B4CE6),
+                                      color: Color(0xFFD946EF),
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13,
                                     ),
@@ -443,13 +436,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _login,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF6B4CE6),
+                                  backgroundColor: const Color(0xFFD946EF),
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(15),
                                   ),
                                   elevation: 5,
-                                  shadowColor: const Color(0xFF6B4CE6).withOpacity(0.5),
+                                  shadowColor: const Color(0xFFD946EF).withOpacity(0.5),
                                 ),
                                 child: _isLoading
                                     ? const SizedBox(
@@ -509,7 +502,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     'Regístrate aquí',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF6B4CE6),
+                                      color: Color(0xFFD946EF),
                                       fontSize: 15,
                                     ),
                                   ),

@@ -32,7 +32,7 @@ class AdminScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('GesSport - Admin'),
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: const Color(0xFFD946EF),
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
         actions: [
@@ -47,12 +47,12 @@ class AdminScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Dashboard Administrativo',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.green.shade700,
+                color: Color(0xFFD946EF),
               ),
             ),
             const SizedBox(height: 20),
@@ -66,35 +66,35 @@ class AdminScreen extends StatelessWidget {
                     context,
                     'Usuarios',
                     Icons.people,
-                    Colors.blue,
+                    const Color(0xFFD946EF),
                     true,
                   ),
                   _buildCard(
                     context,
                     'Pistas',
                     Icons.sports_tennis,
-                    Colors.orange,
+                    const Color(0xFFF0ABFC),
                     false,
                   ),
                   _buildCard(
                     context,
                     'Reservas',
                     Icons.calendar_today,
-                    Colors.purple,
+                    const Color(0xFFA855F7),
                     false,
                   ),
                   _buildCard(
                     context,
                     'Partidos',
                     Icons.sports_soccer,
-                    Colors.red,
+                    const Color(0xFFEC4899),
                     false,
                   ),
                   _buildCard(
                     context,
                     'Equipos',
                     Icons.groups,
-                    Colors.teal,
+                    const Color(0xFF7C3AED),
                     false,
                   ),
                 ],
@@ -117,20 +117,16 @@ class AdminScreen extends StatelessWidget {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
-        onTap: () {
-          if (enabled) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const UsersManagementScreen(),
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Sección de $title próximamente')),
-            );
-          }
-        },
+        onTap: enabled
+            ? () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UsersManagementScreen(),
+            ),
+          );
+        }
+            : null,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(

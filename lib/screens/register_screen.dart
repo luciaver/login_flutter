@@ -120,6 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'rol': _selectedRol,
         'edad': edad,
         'telefono': telefono,
+        'avatarColor': 0,
       };
 
       // Agregar posición solo si es jugador
@@ -134,7 +135,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       await _firestore.collection('usuarios').doc(userCredential.user!.uid).set(userData);
 
-      _showMessage('¡Registro exitoso!', Colors.green);
+      _showMessage('¡Registro exitoso!', const Color(0xFFD946EF));
       await Future.delayed(const Duration(seconds: 1));
 
       if (!mounted) return;
@@ -203,16 +204,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
           },
         ),
         title: const Text('Registro'),
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: const Color(0xFFD946EF),
         foregroundColor: Colors.white,
         centerTitle: true,
       ),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.green.shade700, Colors.green.shade300],
+            colors: [
+              Color(0xFFD946EF),
+              Color(0xFFF0ABFC),
+            ],
           ),
         ),
         child: SafeArea(
@@ -232,15 +236,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Icon(
                         Icons.sports_basketball,
                         size: 80,
-                        color: Colors.green.shade700,
+                        color: const Color(0xFFD946EF),
                       ),
                       const SizedBox(height: 16),
-                      Text(
+                      const Text(
                         'Crear Cuenta',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green.shade700,
+                          color: Color(0xFFD946EF),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -372,9 +376,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: DropdownButton<String>(
                             isExpanded: true,
                             value: _selectedRol,
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.arrow_drop_down,
-                              color: Colors.green.shade700,
+                              color: Color(0xFFD946EF),
                             ),
                             style: TextStyle(
                               color: Colors.grey.shade800,
@@ -387,7 +391,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   children: [
                                     Icon(
                                       rol['icon'],
-                                      color: Colors.green.shade700,
+                                      color: const Color(0xFFD946EF),
                                     ),
                                     const SizedBox(width: 12),
                                     Text(rol['label']),
@@ -405,7 +409,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Selector de posición (solo para jugadores)
+                      // Seleccionar la posicion (solo para jugadores)
                       if (_selectedRol == 'jugador')
                         Container(
                           decoration: BoxDecoration(
@@ -417,9 +421,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: DropdownButton<String>(
                               isExpanded: true,
                               value: _selectedPosicion,
-                              icon: Icon(
+                              icon: const Icon(
                                 Icons.arrow_drop_down,
-                                color: Colors.green.shade700,
+                                color: Color(0xFFD946EF),
                               ),
                               hint: const Text('Selecciona posición'),
                               style: TextStyle(
@@ -431,9 +435,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   value: posicion,
                                   child: Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.sports_soccer,
-                                        color: Colors.green.shade700,
+                                        color: Color(0xFFD946EF),
                                       ),
                                       const SizedBox(width: 12),
                                       Text(posicion),
@@ -471,7 +475,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _register,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green.shade700,
+                            backgroundColor: const Color(0xFFD946EF),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -504,7 +508,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             },
                             child: const Text(
                               'Inicia Sesión',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFD946EF),
+                              ),
                             ),
                           ),
                         ],

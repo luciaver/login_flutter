@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Card de perfil de usuario
 class PerfilCard extends StatelessWidget {
   final String nombre;
   final String email;
@@ -94,7 +93,7 @@ class PerfilCard extends StatelessWidget {
                 ),
               ),
 
-              // Botón editar (opcional)
+              // Botón editar
               if (onEdit != null) ...[
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
@@ -148,7 +147,7 @@ class PerfilCard extends StatelessWidget {
   }
 }
 
-/// Versión compacta del perfil card
+///  perfil card
 class PerfilCardCompact extends StatelessWidget {
   final String nombre;
   final String email;
