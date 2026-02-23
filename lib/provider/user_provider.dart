@@ -3,149 +3,76 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class UserProvider extends ChangeNotifier {
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _db   = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
 
-String _filtroRol = 'todos';
-bool _isLoading = false;
+  String _filtroRol = 'todos';
+  String get filtroRol => _filtroRol;
 
-String get filtroRol => _filtroRol;
-bool get isLoading => _isLoading;
+  void cambiarFiltroRol(String v) {
+    _filtroRol = v;
+    notifyListeners();
+  }
 
+  Stream<QuerySnapshot> obtenerUsuarios() {
+    if (_filtroRol == 'todos') return _db.collection('usuarios').snapshots();
+    return _db.collection('usuarios').where('rol', isEqualTo: _filtroRol).snapshots();
+  }
 
-void cambiarFiltroRol(String nuevoFiltro) {
-_filtroRol = nuevoFiltro;
-notifyListeners();
-}
+  Future<bool> agregarUsuario({
+    required String nombre,
+    required String email,
+    required String password,
+    required String rol,
+    required String fechaNacimiento,
+    required String telefono,
+    String? posicion,
+    String? equipo,
+  }) async {
+    try {
+      final cred = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      final data = <String, dynamic>{
+        'nombre': nombre, 'email': email, 'rol': rol,
+        'fechaNacimiento': fechaNacimiento, 'telefono': telefono,
+      };
+      if (rol == 'jugador' && posicion != null) data['posicion'] = posicion;
+      if (rol != 'jugador' && equipo != null && equipo.isNotEmpty) data['equipo'] = equipo;
+      await _db.collection('usuarios').doc(cred.user!.uid).set(data);
+      return true;
+    } catch (_) { return false; }
+  }
 
-Stream<QuerySnapshot> obtenerUsuarios() {
-if (_filtroRol == 'todos') {
-return _firestore.collection('usuarios').snapshots();
-} else {
-return _firestore
-    .collection('usuarios')
-    .where('rol', isEqualTo: _filtroRol)
-    .snapshots();
-}
-}
+  Future<bool> editarUsuario({
+    required String userId,
+    required String nombre,
+    required String rol,
+    required String fechaNacimiento,
+    required String telefono,
+    String? posicion,
+    String? equipo,
+  }) async {
+    try {
+      final data = <String, dynamic>{
+        'nombre': nombre, 'rol': rol,
+        'fechaNacimiento': fechaNacimiento, 'telefono': telefono,
+      };
+      if (rol == 'jugador') {
+        if (posicion != null) data['posicion'] = posicion;
+        data['equipo'] = FieldValue.delete();
+      } else {
+        data['posicion'] = FieldValue.delete();
+        if (equipo != null && equipo.isNotEmpty) data['equipo'] = equipo;
+        else data['equipo'] = FieldValue.delete();
+      }
+      await _db.collection('usuarios').doc(userId).update(data);
+      return true;
+    } catch (_) { return false; }
+  }
 
-// Agregar usuario
-Future<bool> agregarUsuario({
-required String nombre,
-required String email,
-required String password,
-required String rol,
-required int edad,
-required String telefono,
-String? posicion,
-String? equipo,
-}) async {
-try {
-_isLoading = true;
-notifyListeners();
-
-// Crear usuario en Authentication
-UserCredential userCredential =
-await _auth.createUserWithEmailAndPassword(
-email: email,
-password: password,
-);
-
-Map<String, dynamic> userData = {
-'nombre': nombre,
-'email': email,
-'rol': rol,
-'edad': edad,
-'telefono': telefono,
-};
-
-// Agregar posición solo si es jugador
-if (rol == 'jugador' && posicion != null) {
-userData['posicion'] = posicion;
-}
-
-// Agregar equipo si existe
-if (equipo != null && equipo.isNotEmpty) {
-userData['equipo'] = equipo;
-}
-
-// Guardar datos en Firestore
-await _firestore.collection('usuarios').doc(userCredential.user!.uid).set(userData);
-
-_isLoading = false;
-notifyListeners();
-return true;
-} catch (e) {
-_isLoading = false;
-notifyListeners();
-return false;
-}
-}
-
-// Editar usuario
-Future<bool> editarUsuario({
-required String userId,
-required String nombre,
-required String rol,
-required int edad,
-required String telefono,
-String? posicion,
-String? equipo,
-}) async {
-try {
-_isLoading = true;
-notifyListeners();
-
-// Preparar datos
-Map<String, dynamic> userData = {
-'nombre': nombre,
-'rol': rol,
-'edad': edad,
-'telefono': telefono,
-};
-
-// Agregar posición solo si es jugador
-if (rol == 'jugador' && posicion != null) {
-userData['posicion'] = posicion;
-} else {
-// Eliminar posición si no es jugador
-userData['posicion'] = FieldValue.delete();
-}
-
-// Agregar equipo si existe
-if (equipo != null && equipo.isNotEmpty) {
-userData['equipo'] = equipo;
-} else {
-userData['equipo'] = FieldValue.delete();
-}
-
-await _firestore.collection('usuarios').doc(userId).update(userData);
-
-_isLoading = false;
-notifyListeners();
-return true;
-} catch (e) {
-_isLoading = false;
-notifyListeners();
-return false;
-}
-}
-
-// Eliminar usuario
-Future<bool> eliminarUsuario(String userId) async {
-try {
-_isLoading = true;
-notifyListeners();
-
-await _firestore.collection('usuarios').doc(userId).delete();
-
-_isLoading = false;
-notifyListeners();
-return true;
-} catch (e) {
-_isLoading = false;
-notifyListeners();
-return false;
-}
-}
+  Future<bool> eliminarUsuario(String userId) async {
+    try {
+      await _db.collection('usuarios').doc(userId).delete();
+      return true;
+    } catch (_) { return false; }
+  }
 }

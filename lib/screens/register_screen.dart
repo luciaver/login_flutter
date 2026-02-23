@@ -1,528 +1,188 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'home/HomeScreen.dart';
 import 'login_screen.dart';
-import 'admin_screen.dart';
-import 'users_screen.dart';
+import 'admin/admin_screen.dart';
+
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
-
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final TextEditingController _nombreCtrl = TextEditingController();
-  final TextEditingController _emailCtrl = TextEditingController();
-  final TextEditingController _passwordCtrl = TextEditingController();
-  final TextEditingController _confirmPasswordCtrl = TextEditingController();
-  final TextEditingController _edadCtrl = TextEditingController();
-  final TextEditingController _telefonoCtrl = TextEditingController();
-  final TextEditingController _equipoCtrl = TextEditingController();
-
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
-  bool _isLoading = false;
-  String _selectedRol = 'jugador';
-  String? _selectedPosicion;
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  final List<Map<String, dynamic>> _rolesUsuario = [
-    {'value': 'jugador', 'label': 'Jugador', 'icon': Icons.sports_soccer},
-    {'value': 'entrenador', 'label': 'Entrenador', 'icon': Icons.sports},
-    {'value': 'arbitro', 'label': 'Árbitro', 'icon': Icons.sports_score},
-    {'value': 'admin', 'label': 'Administrador', 'icon': Icons.admin_panel_settings},
-  ];
-
-  final List<String> _posiciones = [
-    'Portero',
-    'Defensa',
-    'Centrocampista',
-    'Delantero',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedPosicion = _posiciones[0];
-  }
+  final _nombreCtrl   = TextEditingController();
+  final _emailCtrl    = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _confirmCtrl  = TextEditingController();
+  final _telCtrl      = TextEditingController();
+  bool  _obscure = true, _obscureC = true, _loading = false;
+  String _rol = 'jugador', _posicion = 'Portero';
 
   @override
   void dispose() {
-    _nombreCtrl.dispose();
-    _emailCtrl.dispose();
-    _passwordCtrl.dispose();
-    _confirmPasswordCtrl.dispose();
-    _edadCtrl.dispose();
-    _telefonoCtrl.dispose();
-    _equipoCtrl.dispose();
+    _nombreCtrl.dispose(); _emailCtrl.dispose(); _passwordCtrl.dispose();
+    _confirmCtrl.dispose(); _telCtrl.dispose();
     super.dispose();
   }
 
-  void _register() async {
+  Future<void> _register() async {
     final nombre = _nombreCtrl.text.trim();
-    final email = _emailCtrl.text.trim();
-    final password = _passwordCtrl.text;
-    final confirmPassword = _confirmPasswordCtrl.text;
-    final edadText = _edadCtrl.text.trim();
-    final telefono = _telefonoCtrl.text.trim();
-    final equipo = _equipoCtrl.text.trim();
-
-    if (nombre.isEmpty ||
-        email.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty ||
-        edadText.isEmpty ||
-        telefono.isEmpty) {
-      _showMessage('Por favor completa todos los campos obligatorios', Colors.orange);
-      return;
+    final email  = _emailCtrl.text.trim();
+    final pass   = _passwordCtrl.text;
+    final tel    = _telCtrl.text.trim();
+    if (nombre.isEmpty || email.isEmpty || pass.isEmpty || tel.isEmpty) {
+      _msg('Completa todos los campos', Colors.orange); return;
     }
-
-    if (!email.contains('@')) {
-      _showMessage('Por favor ingresa un correo válido', Colors.orange);
-      return;
-    }
-
-    if (password.length < 6) {
-      _showMessage(
-          'La contraseña debe tener al menos 6 caracteres', Colors.orange);
-      return;
-    }
-
-    if (password != confirmPassword) {
-      _showMessage('Las contraseñas no coinciden', Colors.orange);
-      return;
-    }
-
-    int? edad = int.tryParse(edadText);
-    if (edad == null || edad < 1 || edad > 120) {
-      _showMessage('Por favor ingresa una edad válida', Colors.orange);
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
+    if (pass.length < 6) { _msg('La contraseña debe tener al menos 6 caracteres', Colors.orange); return; }
+    if (pass != _confirmCtrl.text) { _msg('Las contraseñas no coinciden', Colors.orange); return; }
+    setState(() => _loading = true);
     try {
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      // Preparar datos
-      Map<String, dynamic> userData = {
-        'nombre': nombre,
-        'email': email,
-        'rol': _selectedRol,
-        'edad': edad,
-        'telefono': telefono,
-        'avatarColor': 0,
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: pass);
+      final data = <String, dynamic>{
+        'nombre': nombre, 'email': email, 'rol': _rol, 'telefono': tel,
       };
-
-      // Agregar posición solo si es jugador
-      if (_selectedRol == 'jugador' && _selectedPosicion != null) {
-        userData['posicion'] = _selectedPosicion!;
-      }
-
-      // Agregar equipo si existe
-      if (equipo.isNotEmpty) {
-        userData['equipo'] = equipo;
-      }
-
-      await _firestore.collection('usuarios').doc(userCredential.user!.uid).set(userData);
-
-      _showMessage('¡Registro exitoso!', const Color(0xFFD946EF));
-      await Future.delayed(const Duration(seconds: 1));
-
+      if (_rol == 'jugador') data['posicion'] = _posicion;
+      await FirebaseFirestore.instance.collection('usuarios').doc(cred.user!.uid).set(data);
       if (!mounted) return;
-
-      if (_selectedRol == 'admin') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminScreen()),
-        );
+      if (_rol == 'admin') {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminScreen()));
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => UserScreen(
-              rol: _selectedRol,
-              email: email,
-              nombre: nombre,
-            ),
-          ),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(
+            builder: (_) => HomeScreen(rol: _rol, nombre: nombre, uid: cred.user!.uid)));
       }
     } on FirebaseAuthException catch (e) {
-      String mensaje = 'Error al registrar usuario';
-
-      if (e.code == 'email-already-in-use') {
-        mensaje = 'Este correo ya está registrado';
-      } else if (e.code == 'invalid-email') {
-        mensaje = 'Correo electrónico no válido';
-      } else if (e.code == 'weak-password') {
-        mensaje = 'La contraseña es muy débil';
-      }
-
-      _showMessage(mensaje, Colors.red);
-    } catch (e) {
-      _showMessage('Error: ${e.toString()}', Colors.red);
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+      final msgs = {
+        'email-already-in-use': 'Este correo ya está registrado',
+        'weak-password': 'Contraseña muy débil', 'invalid-email': 'Correo no válido',
+      };
+      _msg(msgs[e.code] ?? 'Error al registrar', Colors.red);
+    } finally { if (mounted) setState(() => _loading = false); }
   }
 
-  void _showMessage(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+  void _msg(String m, Color c) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m), backgroundColor: c,
+        behavior: SnackBarBehavior.floating));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-            );
-          },
-        ),
-        title: const Text('Registro'),
-        backgroundColor: const Color(0xFFD946EF),
-        foregroundColor: Colors.white,
-        centerTitle: true,
+        leading: IconButton(icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()))),
+        title: const Text('Registro'), backgroundColor: const Color(0xFFD946EF), foregroundColor: Colors.white,
       ),
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFD946EF),
-              Color(0xFFF0ABFC),
-            ],
-          ),
+          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [Color(0xFFD946EF), Color(0xFFF0ABFC)]),
         ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.sports_basketball,
-                        size: 80,
-                        color: const Color(0xFFD946EF),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Crear Cuenta',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFD946EF),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Únete a GesSport',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // Nombre
-                      TextField(
-                        controller: _nombreCtrl,
-                        decoration: InputDecoration(
-                          labelText: 'Nombre completo *',
-                          prefixIcon: const Icon(Icons.person),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Email
-                      TextField(
-                        controller: _emailCtrl,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          labelText: 'Correo electrónico *',
-                          prefixIcon: const Icon(Icons.email),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Edad
-                      TextField(
-                        controller: _edadCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: 'Edad *',
-                          prefixIcon: const Icon(Icons.cake),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Teléfono
-                      TextField(
-                        controller: _telefonoCtrl,
-                        keyboardType: TextInputType.phone,
-                        decoration: InputDecoration(
-                          labelText: 'Teléfono *',
-                          prefixIcon: const Icon(Icons.phone),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Contraseña
-                      TextField(
-                        controller: _passwordCtrl,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Contraseña *',
-                          prefixIcon: const Icon(Icons.lock),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Confirmar contraseña
-                      TextField(
-                        controller: _confirmPasswordCtrl,
-                        obscureText: _obscureConfirmPassword,
-                        decoration: InputDecoration(
-                          labelText: 'Confirmar contraseña *',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureConfirmPassword =
-                                !_obscureConfirmPassword;
-                              });
-                            },
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Selector de rol
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade400),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            value: _selectedRol,
-                            icon: const Icon(
-                              Icons.arrow_drop_down,
-                              color: Color(0xFFD946EF),
-                            ),
-                            style: TextStyle(
-                              color: Colors.grey.shade800,
-                              fontSize: 16,
-                            ),
-                            items: _rolesUsuario.map((rol) {
-                              return DropdownMenuItem<String>(
-                                value: rol['value'],
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      rol['icon'],
-                                      color: const Color(0xFFD946EF),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(rol['label']),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedRol = value!;
-                              });
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Seleccionar la posicion (solo para jugadores)
-                      if (_selectedRol == 'jugador')
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey.shade400),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              isExpanded: true,
-                              value: _selectedPosicion,
-                              icon: const Icon(
-                                Icons.arrow_drop_down,
-                                color: Color(0xFFD946EF),
-                              ),
-                              hint: const Text('Selecciona posición'),
-                              style: TextStyle(
-                                color: Colors.grey.shade800,
-                                fontSize: 16,
-                              ),
-                              items: _posiciones.map((posicion) {
-                                return DropdownMenuItem<String>(
-                                  value: posicion,
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.sports_soccer,
-                                        color: Color(0xFFD946EF),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Text(posicion),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedPosicion = value;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      if (_selectedRol == 'jugador') const SizedBox(height: 16),
-
-                      // Equipo (opcional)
-                      TextField(
-                        controller: _equipoCtrl,
-                        decoration: InputDecoration(
-                          labelText: 'Equipo (opcional)',
-                          prefixIcon: const Icon(Icons.groups),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Botón registrarse
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _register,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFD946EF),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(
-                              color: Colors.white)
-                              : const Text(
-                            'Registrarse',
-                            style: TextStyle(fontSize: 18),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Login
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text('¿Ya tienes cuenta? '),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginScreen(),
-                                ),
-                              );
-                            },
-                            child: const Text(
-                              'Inicia Sesión',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFD946EF),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Card(
+              elevation: 8,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.sports_basketball, size: 64, color: Color(0xFFD946EF)),
+                  const SizedBox(height: 10),
+                  const Text('Crear Cuenta', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold,
+                      color: Color(0xFFD946EF))),
+                  const SizedBox(height: 20),
+                  _campo(_nombreCtrl, 'Nombre completo', Icons.person),
+                  const SizedBox(height: 10),
+                  _campo(_emailCtrl, 'Correo electrónico', Icons.email, type: TextInputType.emailAddress),
+                  const SizedBox(height: 10),
+                  _campo(_telCtrl, 'Teléfono', Icons.phone, type: TextInputType.phone),
+                  const SizedBox(height: 10),
+                  _campoPass(_passwordCtrl, 'Contraseña', _obscure, () => setState(() => _obscure = !_obscure)),
+                  const SizedBox(height: 10),
+                  _campoPass(_confirmCtrl, 'Confirmar contraseña', _obscureC, () => setState(() => _obscureC = !_obscureC)),
+                  const SizedBox(height: 10),
+                  _dropBox<String>(
+                    value: _rol,
+                    items: const [
+                      DropdownMenuItem(value: 'jugador', child: Text('Jugador')),
+                      DropdownMenuItem(value: 'entrenador', child: Text('Entrenador')),
+                      DropdownMenuItem(value: 'arbitro', child: Text('Árbitro')),
+                      DropdownMenuItem(value: 'admin', child: Text('Administrador')),
                     ],
+                    onChanged: (v) => setState(() => _rol = v!),
                   ),
-                ),
+                  if (_rol == 'jugador') ...[
+                    const SizedBox(height: 10),
+                    _dropBox<String>(
+                      value: _posicion,
+                      items: const [
+                        DropdownMenuItem(value: 'Portero', child: Text('Portero')),
+                        DropdownMenuItem(value: 'Defensa', child: Text('Defensa')),
+                        DropdownMenuItem(value: 'Centrocampista', child: Text('Centrocampista')),
+                        DropdownMenuItem(value: 'Delantero', child: Text('Delantero')),
+                      ],
+                      onChanged: (v) => setState(() => _posicion = v!),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity, height: 48,
+                    child: ElevatedButton(
+                      onPressed: _loading ? null : _register,
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD946EF),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      child: _loading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Registrarse', style: TextStyle(fontSize: 16)),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    const Text('¿Ya tienes cuenta? '),
+                    TextButton(
+                      onPressed: () => Navigator.pushReplacement(context,
+                          MaterialPageRoute(builder: (_) => const LoginScreen())),
+                      child: const Text('Inicia Sesión',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFD946EF))),
+                    ),
+                  ]),
+                ]),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _campo(TextEditingController ctrl, String label, IconData icon,
+      {TextInputType type = TextInputType.text}) {
+    return TextField(controller: ctrl, keyboardType: type,
+        decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))));
+  }
+
+  Widget _campoPass(TextEditingController ctrl, String label, bool obscure, VoidCallback toggle) {
+    return TextField(controller: ctrl, obscureText: obscure,
+        decoration: InputDecoration(labelText: label, prefixIcon: const Icon(Icons.lock),
+            suffixIcon: IconButton(icon: Icon(obscure ? Icons.visibility : Icons.visibility_off), onPressed: toggle),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))));
+  }
+
+  Widget _dropBox<T>({required T value, required List<DropdownMenuItem<T>> items, required ValueChanged<T?> onChanged}) {
+    return Container(
+      decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade400),
+          borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(value: value, isExpanded: true,
+            icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFD946EF)),
+            items: items, onChanged: onChanged),
       ),
     );
   }

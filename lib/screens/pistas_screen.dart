@@ -1,170 +1,167 @@
 import 'package:flutter/material.dart';
-import 'reservas_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'reservar_pista_screen.dart';
 
-// Pantalla de pistas para usuarios
-// Muestra las 4 pistas con foto, título y botón de reservar
+class PistasScreen extends StatefulWidget {
+  final bool mostrarAppBar;
+  const PistasScreen({super.key, this.mostrarAppBar = true});
 
-class PistasScreen extends StatelessWidget {
-  const PistasScreen({super.key});
+  @override
+  State<PistasScreen> createState() => _PistasScreenState();
+}
 
-  // Colores de la app
+class _PistasScreenState extends State<PistasScreen> {
   static const Color morado = Color(0xFF6B4CE6);
-  static const Color rosa = Color(0xFFE91E8C);
-  static const Color fondo = Color(0xFFF5F0FF);
+  String _filtro = 'Todas';
+  static const _deportes = ['Todas', 'Fútbol', 'Baloncesto', 'Pádel', 'Tenis'];
 
-  // Las 4 pistas fijas con su foto local
-  static const List<Map<String, String>> pistas = [
-    {
-      'nombre': 'Pista de Tenis',
-      'tipo': 'Tenis',
-      'imagen': 'assets/tenis.jpg',
-      'precio': '15',
-    },
-    {
-      'nombre': 'Campo de Fútbol',
-      'tipo': 'Fútbol',
-      'imagen': 'assets/futbol.jpg',
-      'precio': '40',
-    },
-    {
-      'nombre': 'Pista de Pádel',
-      'tipo': 'Pádel',
-      'imagen': 'assets/padel.png',
-      'precio': '20',
-    },
-    {
-      'nombre': 'Cancha de Baloncesto',
-      'tipo': 'Baloncesto',
-      'imagen': 'assets/baloncesto.png',
-      'precio': '25',
-    },
-  ];
+  Stream<QuerySnapshot> get _stream {
+    final base = FirebaseFirestore.instance.collection('pistas').where('disponible', isEqualTo: true);
+    if (_filtro == 'Todas') return base.snapshots();
+    return base.where('tipo', isEqualTo: _filtro).snapshots();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: fondo,
-      appBar: AppBar(
-        title: const Text('Nuestras Pistas'),
-        backgroundColor: morado,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: pistas.length,
-        itemBuilder: (context, i) {
-          final pista = pistas[i];
-          return _PistaCard(pista: pista);
-        },
-      ),
+      backgroundColor: const Color(0xFFF5F0FF),
+      appBar: widget.mostrarAppBar
+          ? AppBar(title: const Text('Nuestras Pistas'),
+          backgroundColor: morado, foregroundColor: Colors.white)
+          : null,
+      body: Column(children: [
+        // Filtro por deporte
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _deportes.map((d) {
+                final sel = _filtro == d;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(d), selected: sel, selectedColor: morado,
+                    checkmarkColor: Colors.white,
+                    labelStyle: TextStyle(
+                        color: sel ? Colors.white : Colors.black87,
+                        fontWeight: sel ? FontWeight.bold : FontWeight.normal),
+                    onSelected: (_) => setState(() => _filtro = d),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+        // Lista
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: _stream,
+            builder: (_, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: morado));
+              }
+              if (!snap.hasData || snap.data!.docs.isEmpty) {
+                return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.sports, size: 64, color: Colors.grey.shade300),
+                  const SizedBox(height: 12),
+                  Text('No hay pistas disponibles', style: TextStyle(color: Colors.grey.shade500)),
+                ]));
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.all(14),
+                itemCount: snap.data!.docs.length,
+                itemBuilder: (_, i) {
+                  final doc = snap.data!.docs[i];
+                  final d = doc.data() as Map<String, dynamic>;
+                  return _PistaCard(
+                    pistaId: doc.id,
+                    nombre: d['nombre'] ?? 'Pista',
+                    tipo: d['tipo'] ?? '',
+                    precio: d['precio']?.toString() ?? '0',
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ]),
     );
   }
 }
 
-// Tarjeta individual de pista
 class _PistaCard extends StatelessWidget {
-  final Map<String, String> pista;
+  final String pistaId, nombre, tipo, precio;
+  const _PistaCard({required this.pistaId, required this.nombre, required this.tipo, required this.precio});
 
-  const _PistaCard({required this.pista});
+  Color get _color {
+    switch (tipo) {
+      case 'Tenis':      return const Color(0xFF6B4CE6);
+      case 'Fútbol':     return const Color(0xFFE91E8C);
+      case 'Pádel':      return const Color(0xFF8B5CF6);
+      case 'Baloncesto': return const Color(0xFFF59E0B);
+      default:           return const Color(0xFF6B4CE6);
+    }
+  }
+
+  IconData get _icono {
+    switch (tipo) {
+      case 'Tenis':      return Icons.sports_tennis;
+      case 'Fútbol':     return Icons.sports_soccer;
+      case 'Pádel':      return Icons.sports;
+      case 'Baloncesto': return Icons.sports_basketball;
+      default:           return Icons.sports;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6B4CE6).withOpacity(0.12),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [BoxShadow(color: _color.withOpacity(0.12), blurRadius: 14, offset: const Offset(0, 5))],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Foto de la pista
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: Image.asset(
-              pista['imagen']!,
-              height: 180,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                height: 180,
-                color: Colors.grey.shade200,
-                child: const Icon(Icons.sports, size: 60, color: Colors.grey),
+      child: Column(children: [
+        // Cabecera de color con icono
+        Container(
+          width: double.infinity, height: 110,
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+            gradient: LinearGradient(
+              colors: [_color.withOpacity(0.6), _color],
+              begin: Alignment.topLeft, end: Alignment.bottomRight,
+            ),
+          ),
+          child: Center(child: Icon(_icono, size: 60, color: Colors.white)),
+        ),
+        // Info y botón reservar
+        Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(nombre, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 2),
+              Text('€$precio / hora',
+                  style: TextStyle(fontSize: 13, color: _color, fontWeight: FontWeight.w600)),
+            ])),
+            ElevatedButton(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => ReservarPistaScreen(
+                    pistaId: pistaId, pistaNombre: nombre, tipo: tipo, precio: precio),
+              )),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6B4CE6), foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               ),
+              child: const Text('Reservar', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
-          ),
-
-          // Info y botón
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Texto
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        pista['nombre']!,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2D2D2D),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '€ ${pista['precio']}€/hora',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF6B4CE6),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Botón reservar
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ReservarPistaScreen(pista: pista),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6B4CE6),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Reservar',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+          ]),
+        ),
+      ]),
     );
   }
 }
