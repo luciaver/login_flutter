@@ -5,17 +5,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../home_widgets.dart';
 import '../login_screen.dart';
 
-
 class PerfilTab extends StatelessWidget {
   final String nombre;
   final String rol;
   final String uid;
   const PerfilTab({super.key, required this.nombre, required this.rol, required this.uid});
 
+  static const Color rosa     = Color(0xFFEC4899);
+  static const Color rosaDark = Color(0xFFDB2777);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0FF),
+      backgroundColor: const Color(0xFFFFF0F6),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance.collection('usuarios').doc(uid).get(),
         builder: (context, snapshot) {
@@ -29,7 +31,7 @@ class PerfilTab extends StatelessWidget {
                   delegate: SliverChildListDelegate([
                     PerfilInfoCard(data: data),
                     const SizedBox(height: 16),
-                    const SeccionTitulo(titulo: 'Mis incidencias', icono: Icons.warning_amber_outlined, color: Color(0xFFE91E8C)),
+                    const SeccionTitulo(titulo: 'Mis incidencias', icono: Icons.warning_amber_outlined, color: rosaDark),
                     const SizedBox(height: 10),
                     IncidenciasList(uid: uid),
                     const SizedBox(height: 80),
@@ -45,10 +47,10 @@ class PerfilTab extends StatelessWidget {
 
   SliverAppBar _buildAppBar(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: 200,
+      expandedHeight: 220,
       pinned: true,
       automaticallyImplyLeading: false,
-      backgroundColor: const Color(0xFF6B4CE6),
+      backgroundColor: rosaDark,
       actions: [
         IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
@@ -63,7 +65,7 @@ class PerfilTab extends StatelessWidget {
         background: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF6B4CE6), Color(0xFFE91E8C)],
+              colors: [Color(0xFFDB2777), Color(0xFFEC4899), Color(0xFFF472B6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -74,22 +76,27 @@ class PerfilTab extends StatelessWidget {
               children: [
                 const SizedBox(height: 40),
                 CircleAvatar(
-                  radius: 40,
+                  radius: 44,
                   backgroundColor: Colors.white.withOpacity(0.3),
-                  child: Text(nombre.isNotEmpty ? nombre[0].toUpperCase() : 'U',
-                      style: const TextStyle(fontSize: 36, color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    nombre.isNotEmpty ? nombre[0].toUpperCase() : 'U',
+                    style: const TextStyle(fontSize: 38, color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Text(nombre, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
+                const SizedBox(height: 10),
+                Text(nombre,
+                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(rol.toUpperCase(),
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                  child: Text(
+                    rol.toUpperCase(),
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                  ),
                 ),
               ],
             ),

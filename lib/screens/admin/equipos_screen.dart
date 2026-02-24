@@ -3,12 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EquiposScreen extends StatelessWidget {
   const EquiposScreen({super.key});
-  static const Color ac = Color(0xFF7C3AED);
+  static const Color ac = Color(0xFFEC4899);
+  static const Color acDark = Color(0xFFDB2777);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Equipos'), backgroundColor: ac, foregroundColor: Colors.white),
+      appBar: AppBar(
+        title: const Text('Equipos'),
+        backgroundColor: acDark,
+        foregroundColor: Colors.white,
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('equipos').snapshots(),
         builder: (_, snap) {
@@ -16,7 +21,13 @@ class EquiposScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator(color: ac));
           }
           if (!snap.hasData || snap.data!.docs.isEmpty) {
-            return const Center(child: Text('No hay equipos'));
+            return Center(
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(Icons.groups_outlined, size: 64, color: Colors.grey.shade300),
+                const SizedBox(height: 12),
+                Text('No hay equipos', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
+              ]),
+            );
           }
           return ListView.builder(
             padding: const EdgeInsets.all(14),
@@ -24,24 +35,106 @@ class EquiposScreen extends StatelessWidget {
             itemBuilder: (_, i) {
               final doc = snap.data!.docs[i];
               final d = doc.data() as Map<String, dynamic>;
-              final nombre   = d['nombre'] ?? 'Equipo';
-              final deporte  = d['deporte'] ?? '';
-              final jugadores = List.from(d['jugadoresIds'] ?? []);
+              final nombre     = d['nombre'] ?? 'Equipo';
+              final deporte    = d['deporte'] ?? '';
+              final jugadorIds = List<String>.from(d['jugadoresIds'] ?? []);
+              final entrenadorId = d['entrenadorId'] as String?;
+
               return Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                elevation: 3, margin: const EdgeInsets.only(bottom: 10),
-                child: ListTile(
-                  leading: CircleAvatar(backgroundColor: ac,
-                      child: Text(nombre[0].toUpperCase(),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                  title: Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('$deporte · ${jugadores.length} jugadores'),
-                  trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                    IconButton(icon: const Icon(Icons.edit, color: ac),
-                        onPressed: () => _editar(context, doc.id, d)),
-                    IconButton(icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _eliminar(context, doc.id, nombre)),
-                  ]),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 3,
+                margin: const EdgeInsets.only(bottom: 14),
+                child: Column(
+                  children: [
+                    // Cabecera del equipo
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [acDark.withOpacity(0.8), ac],
+                          begin: Alignment.topLeft, end: Alignment.bottomRight,
+                        ),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      ),
+                      padding: const EdgeInsets.all(14),
+                      child: Row(children: [
+                        CircleAvatar(
+                          backgroundColor: Colors.white.withOpacity(0.3),
+                          child: Text(
+                            nombre[0].toUpperCase(),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                            Text('$deporte · ${jugadorIds.length} jugadores',
+                                style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
+                          ]),
+                        ),
+                        // Botones editar/eliminar separados
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.white, size: 20),
+                            onPressed: () => _editar(context, doc.id, d),
+                            tooltip: 'Editar equipo',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.white, size: 20),
+                            onPressed: () => _eliminar(context, doc.id, nombre),
+                            tooltip: 'Eliminar equipo',
+                          ),
+                        ),
+                      ]),
+                    ),
+                    // Entrenador
+                    if (entrenadorId != null)
+                      _EntrenadorTile(entrenadorId: entrenadorId),
+                    if (entrenadorId == null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        child: Row(children: [
+                          Icon(Icons.sports, color: Colors.grey.shade400, size: 18),
+                          const SizedBox(width: 8),
+                          Text('Sin entrenador asignado',
+                              style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontStyle: FontStyle.italic)),
+                        ]),
+                      ),
+                    if (jugadorIds.isNotEmpty) ...[
+                      Divider(height: 1, color: Colors.grey.shade200),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+                        child: Row(children: [
+                          const Icon(Icons.people, color: ac, size: 16),
+                          const SizedBox(width: 6),
+                          Text('Jugadores (${jugadorIds.length})',
+                              style: const TextStyle(fontWeight: FontWeight.bold, color: ac, fontSize: 13)),
+                        ]),
+                      ),
+                      ...jugadorIds.map((jid) => _JugadorTile(uid: jid)),
+                    ],
+                    if (jugadorIds.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+                        child: Row(children: [
+                          Icon(Icons.person_off_outlined, color: Colors.grey.shade400, size: 18),
+                          const SizedBox(width: 8),
+                          Text('Sin jugadores', style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontStyle: FontStyle.italic)),
+                        ]),
+                      ),
+                    const SizedBox(height: 8),
+                  ],
                 ),
               );
             },
@@ -49,8 +142,10 @@ class EquiposScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _agregar(context), backgroundColor: ac,
-        icon: const Icon(Icons.add), label: const Text('Nuevo Equipo'),
+        onPressed: () => _agregar(context),
+        backgroundColor: acDark,
+        icon: const Icon(Icons.add),
+        label: const Text('Nuevo Equipo'),
       ),
     );
   }
@@ -60,24 +155,38 @@ class EquiposScreen extends StatelessWidget {
   void _agregar(BuildContext context) {
     final nc = TextEditingController();
     String deporte = 'Fútbol';
+    String? entrenadorId;
+
     showDialog(context: context, builder: (ctx) => StatefulBuilder(
       builder: (ctx, ss) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Nuevo Equipo'),
+        title: const Row(children: [
+          Icon(Icons.group_add, color: acDark),
+          SizedBox(width: 8),
+          Text('Nuevo Equipo'),
+        ]),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           _campo(nc, 'Nombre del equipo', Icons.groups),
           const SizedBox(height: 12),
           _dropDeporte(deporte, (v) => ss(() => deporte = v!)),
+          const SizedBox(height: 12),
+          _SelectorEntrenador(selectedId: entrenadorId, onChanged: (v) => ss(() => entrenadorId = v)),
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: ac, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: acDark, foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             onPressed: () async {
               if (nc.text.trim().isEmpty) return;
-              await FirebaseFirestore.instance.collection('equipos').add(
-                  {'nombre': nc.text.trim(), 'deporte': deporte, 'jugadoresIds': []});
+              await FirebaseFirestore.instance.collection('equipos').add({
+                'nombre': nc.text.trim(),
+                'deporte': deporte,
+                'jugadoresIds': [],
+                if (entrenadorId != null) 'entrenadorId': entrenadorId,
+              });
               Navigator.pop(ctx);
             },
             child: const Text('Crear'),
@@ -90,23 +199,41 @@ class EquiposScreen extends StatelessWidget {
   void _editar(BuildContext context, String id, Map<String, dynamic> data) {
     final nc = TextEditingController(text: data['nombre']);
     String deporte = data['deporte'] ?? 'Fútbol';
+    String? entrenadorId = data['entrenadorId'] as String?;
+
     showDialog(context: context, builder: (ctx) => StatefulBuilder(
       builder: (ctx, ss) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Editar Equipo'),
+        title: const Row(children: [
+          Icon(Icons.edit, color: acDark),
+          SizedBox(width: 8),
+          Text('Editar Equipo'),
+        ]),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           _campo(nc, 'Nombre', Icons.groups),
           const SizedBox(height: 12),
           _dropDeporte(deporte, (v) => ss(() => deporte = v!)),
+          const SizedBox(height: 12),
+          _SelectorEntrenador(selectedId: entrenadorId, onChanged: (v) => ss(() => entrenadorId = v)),
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: ac, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: acDark, foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             onPressed: () async {
-              await FirebaseFirestore.instance.collection('equipos').doc(id)
-                  .update({'nombre': nc.text.trim(), 'deporte': deporte});
+              final updateData = <String, dynamic>{
+                'nombre': nc.text.trim(),
+                'deporte': deporte,
+              };
+              if (entrenadorId != null) {
+                updateData['entrenadorId'] = entrenadorId;
+              } else {
+                updateData['entrenadorId'] = FieldValue.delete();
+              }
+              await FirebaseFirestore.instance.collection('equipos').doc(id).update(updateData);
               Navigator.pop(ctx);
             },
             child: const Text('Guardar'),
@@ -137,22 +264,156 @@ class EquiposScreen extends StatelessWidget {
 
   Widget _campo(TextEditingController ctrl, String label, IconData icon) => TextField(
     controller: ctrl,
-    decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon, color: ac),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: ac, width: 2))),
+    decoration: InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: acDark),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: acDark, width: 2),
+      ),
+    ),
   );
 
   Widget _dropDeporte(String value, ValueChanged<String?> onChanged) => Container(
-    decoration: BoxDecoration(border: Border.all(color: ac), borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(border: Border.all(color: acDark), borderRadius: BorderRadius.circular(12)),
     padding: const EdgeInsets.symmetric(horizontal: 12),
     child: DropdownButtonHideUnderline(
       child: DropdownButton<String>(
         value: value, isExpanded: true,
-        icon: const Icon(Icons.arrow_drop_down, color: ac),
+        icon: const Icon(Icons.arrow_drop_down, color: acDark),
         items: _deportes.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
         onChanged: onChanged,
       ),
     ),
   );
+}
+
+// ── Tile del entrenador ─────────────────────────────────────
+
+class _EntrenadorTile extends StatelessWidget {
+  final String entrenadorId;
+  const _EntrenadorTile({required this.entrenadorId});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('usuarios').doc(entrenadorId).get(),
+      builder: (_, snap) {
+        final d = snap.data?.data() as Map<String, dynamic>?;
+        final nombre = d?['nombre'] ?? 'Entrenador';
+        return Container(
+          margin: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEC4899).withOpacity(0.08),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFEC4899).withOpacity(0.3)),
+          ),
+          child: Row(children: [
+            const CircleAvatar(
+              radius: 16,
+              backgroundColor: Color(0xFFEC4899),
+              child: Icon(Icons.sports, color: Colors.white, size: 16),
+            ),
+            const SizedBox(width: 10),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('ENTRENADOR', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFEC4899), letterSpacing: 1)),
+              Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ]),
+          ]),
+        );
+      },
+    );
+  }
+}
+
+// ── Tile de jugador ─────────────────────────────────────────
+
+class _JugadorTile extends StatelessWidget {
+  final String uid;
+  const _JugadorTile({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('usuarios').doc(uid).get(),
+      builder: (_, snap) {
+        final d = snap.data?.data() as Map<String, dynamic>?;
+        final nombre   = d?['nombre'] ?? 'Jugador';
+        final posicion = d?['posicion'] as String? ?? '';
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          child: Row(children: [
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: const Color(0xFFEC4899).withOpacity(0.15),
+              child: const Icon(Icons.person, size: 14, color: Color(0xFFEC4899)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(nombre, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+            ),
+            if (posicion.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEC4899).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(posicion, style: const TextStyle(fontSize: 11, color: Color(0xFFEC4899))),
+              ),
+          ]),
+        );
+      },
+    );
+  }
+}
+
+// ── Selector de entrenador ──────────────────────────────────
+
+class _SelectorEntrenador extends StatelessWidget {
+  final String? selectedId;
+  final ValueChanged<String?> onChanged;
+  const _SelectorEntrenador({required this.selectedId, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<QuerySnapshot>(
+      future: FirebaseFirestore.instance.collection('usuarios').where('rol', isEqualTo: 'entrenador').get(),
+      builder: (_, snap) {
+        if (!snap.hasData) return const LinearProgressIndicator(color: EquiposScreen.acDark);
+        return Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: EquiposScreen.acDark),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              hint: const Row(children: [
+                Icon(Icons.sports, color: EquiposScreen.acDark, size: 18),
+                SizedBox(width: 8),
+                Text('Entrenador (opcional)'),
+              ]),
+              value: selectedId,
+              isExpanded: true,
+              icon: const Icon(Icons.arrow_drop_down, color: EquiposScreen.acDark),
+              items: [
+                const DropdownMenuItem<String>(value: null, child: Text('Sin entrenador')),
+                ...snap.data!.docs.map((doc) {
+                  final d = doc.data() as Map<String, dynamic>;
+                  return DropdownMenuItem<String>(
+                    value: doc.id,
+                    child: Text(d['nombre'] ?? doc.id),
+                  );
+                }),
+              ],
+              onChanged: onChanged,
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

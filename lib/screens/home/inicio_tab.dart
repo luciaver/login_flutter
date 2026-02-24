@@ -12,8 +12,8 @@ class InicioTab extends StatelessWidget {
 
   const InicioTab({super.key, required this.rol, required this.nombre, required this.uid});
 
-  static const Color morado = Color(0xFF6B4CE6);
-  static const Color rosa = Color(0xFFE91E8C);
+  static const Color rosa     = Color(0xFFEC4899);
+  static const Color rosaDark = Color(0xFFDB2777);
 
   String get _saludo {
     switch (rol) {
@@ -35,29 +35,29 @@ class InicioTab extends StatelessWidget {
               StatsRow(uid: uid, rol: rol),
               const SizedBox(height: 20),
               if (rol == 'arbitro') ...[
-                SeccionTitulo(titulo: 'Mis partidos', icono: Icons.sports_soccer, color: const Color(0xFF8B5CF6)),
+                const SeccionTitulo(titulo: 'Mis partidos', icono: Icons.sports_soccer, color: Color(0xFFDB2777)),
                 const SizedBox(height: 10),
                 PartidosList(uid: uid, soloArbitro: true),
               ],
               if (rol == 'entrenador') ...[
-                SeccionTitulo(titulo: 'Próximas reservas', icono: Icons.calendar_today, color: morado),
+                const SeccionTitulo(titulo: 'Próximas reservas', icono: Icons.calendar_today, color: rosa),
                 const SizedBox(height: 10),
                 ProximasReservas(uid: uid),
                 const SizedBox(height: 20),
-                SeccionTitulo(titulo: 'Partidos de mis equipos', icono: Icons.sports_soccer, color: rosa),
+                const SeccionTitulo(titulo: 'Partidos de mis equipos', icono: Icons.sports_soccer, color: rosaDark),
                 const SizedBox(height: 10),
                 PartidosEntrenador(uid: uid),
                 const SizedBox(height: 20),
-                SeccionTitulo(titulo: 'Incidencias', icono: Icons.warning_amber_outlined, color: rosa),
+                const SeccionTitulo(titulo: 'Incidencias', icono: Icons.warning_amber_outlined, color: rosaDark),
                 const SizedBox(height: 10),
                 BotonIncidencia(uid: uid, tipo: 'entrenamiento_cancelado'),
               ],
               if (rol == 'jugador') ...[
-                SeccionTitulo(titulo: 'Próximas reservas', icono: Icons.calendar_today, color: morado),
+                const SeccionTitulo(titulo: 'Próximas reservas', icono: Icons.calendar_today, color: rosa),
                 const SizedBox(height: 10),
                 ProximasReservas(uid: uid),
                 const SizedBox(height: 20),
-                SeccionTitulo(titulo: 'Incidencias', icono: Icons.warning_amber_outlined, color: rosa),
+                const SeccionTitulo(titulo: 'Incidencias', icono: Icons.warning_amber_outlined, color: rosaDark),
                 const SizedBox(height: 10),
                 BotonIncidencia(uid: uid, tipo: 'no_asistencia'),
               ],
@@ -75,7 +75,7 @@ class InicioTab extends StatelessWidget {
       floating: false,
       pinned: true,
       automaticallyImplyLeading: false,
-      backgroundColor: morado,
+      backgroundColor: rosaDark,
       actions: [
         IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
@@ -90,7 +90,7 @@ class InicioTab extends StatelessWidget {
         background: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF6B4CE6), Color(0xFFE91E8C)],
+              colors: [Color(0xFFDB2777), Color(0xFFEC4899), Color(0xFFF472B6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -101,10 +101,12 @@ class InicioTab extends StatelessWidget {
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 26,
+                    radius: 28,
                     backgroundColor: Colors.white.withOpacity(0.3),
-                    child: Text(nombre.isNotEmpty ? nombre[0].toUpperCase() : 'U',
-                        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      nombre.isNotEmpty ? nombre[0].toUpperCase() : 'U',
+                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -114,9 +116,16 @@ class InicioTab extends StatelessWidget {
                       children: [
                         Text(_saludo,
                             style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 2),
-                        Text(rol.toUpperCase(),
-                            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(rol.toUpperCase(),
+                              style: TextStyle(color: Colors.white.withOpacity(0.95), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                        ),
                       ],
                     ),
                   ),

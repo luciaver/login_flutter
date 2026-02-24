@@ -25,11 +25,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _pagina = 0;
 
+  static const Color rosa = Color(0xFFEC4899);
+
   List<Widget> get _paginas {
     if (widget.rol == 'arbitro') {
       return [
         InicioTab(rol: widget.rol, nombre: widget.nombre, uid: widget.uid),
-        PartidosScreen(uid: widget.uid, rol: widget.rol),
+        const PartidosScreen(),
         PerfilTab(nombre: widget.nombre, rol: widget.rol, uid: widget.uid),
       ];
     }
@@ -51,7 +53,6 @@ class _HomeScreenState extends State<HomeScreen> {
         BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Perfil'),
       ];
     }
-    // ✅ La lista NO puede ser const cuando contiene un `if` condicional
     return [
       const BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Inicio'),
       const BottomNavigationBarItem(icon: Icon(Icons.sports_outlined), activeIcon: Icon(Icons.sports), label: 'Pistas'),
@@ -70,12 +71,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_pagina >= paginas.length) _pagina = 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0FF),
+      backgroundColor: const Color(0xFFFFF0F6),
       body: IndexedStack(index: _pagina, children: paginas),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _pagina,
         onTap: (i) => setState(() => _pagina = i),
-        selectedItemColor: const Color(0xFF6B4CE6),
+        selectedItemColor: rosa,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,

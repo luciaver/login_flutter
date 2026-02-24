@@ -14,14 +14,17 @@ class UsersManagementScreen extends StatelessWidget {
 
 class _Body extends StatelessWidget {
   const _Body();
-  static const Color ac = Color(0xFFD946EF);
+  static const Color ac = Color(0xFFEC4899);
 
   @override
   Widget build(BuildContext context) {
     final prov = Provider.of<UserProvider>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Gestión de Usuarios'),
-          backgroundColor: ac, foregroundColor: Colors.white),
+      appBar: AppBar(
+        title: const Text('Gestión de Usuarios'),
+        backgroundColor: const Color(0xFFDB2777),
+        foregroundColor: Colors.white,
+      ),
       body: Column(children: [
         // Filtro
         Container(
@@ -32,12 +35,16 @@ class _Body extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Container(
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: ac)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: ac),
+                ),
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
-                    value: prov.filtroRol, isExpanded: true,
+                    value: prov.filtroRol,
+                    isExpanded: true,
                     icon: const Icon(Icons.arrow_drop_down, color: ac),
                     items: const [
                       DropdownMenuItem(value: 'todos',      child: Text('Todos')),
@@ -80,20 +87,37 @@ class _Body extends StatelessWidget {
                   return Card(
                     margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     elevation: 2,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: _color(rol).withOpacity(0.3))),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: _color(rol).withOpacity(0.3)),
+                    ),
                     child: ExpansionTile(
-                      leading: CircleAvatar(backgroundColor: _color(rol),
-                          child: Icon(_icon(rol), color: Colors.white)),
+                      leading: CircleAvatar(
+                        backgroundColor: _color(rol),
+                        child: Icon(_icon(rol), color: Colors.white),
+                      ),
                       title: Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('$email\n${rol.toUpperCase()}',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                        _iconBtn(Icons.edit, ac,
-                                () => _editar(context, doc.id, nombre, email, rol, fecha, telefono, posicion, equipo)),
-                        _iconBtn(Icons.delete, Colors.red,
-                                () => _eliminar(context, doc.id, nombre)),
-                      ]),
+                      subtitle: Text(
+                        '$email\n${rol.toUpperCase()}',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      ),
+                      // ── Botones separados con espacio entre ellos ──
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _iconBtn(
+                            Icons.edit,
+                            ac,
+                                () => _editar(context, doc.id, nombre, email, rol, fecha, telefono, posicion, equipo),
+                          ),
+                          const SizedBox(width: 6),
+                          _iconBtn(
+                            Icons.delete,
+                            Colors.red,
+                                () => _eliminar(context, doc.id, nombre),
+                          ),
+                        ],
+                      ),
                       children: [
                         Container(
                           color: _color(rol).withOpacity(0.04),
@@ -116,8 +140,10 @@ class _Body extends StatelessWidget {
         ),
       ]),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _agregar(context), backgroundColor: ac,
-        icon: const Icon(Icons.add), label: const Text('Nuevo'),
+        onPressed: () => _agregar(context),
+        backgroundColor: ac,
+        icon: const Icon(Icons.add),
+        label: const Text('Nuevo'),
       ),
     );
   }
@@ -134,10 +160,10 @@ class _Body extends StatelessWidget {
 
   Color _color(String rol) {
     switch (rol) {
-      case 'jugador':    return const Color(0xFFD946EF);
-      case 'entrenador': return const Color(0xFFF0ABFC);
-      case 'arbitro':    return const Color(0xFFA855F7);
-      case 'admin':      return const Color(0xFF7C3AED);
+      case 'jugador':    return const Color(0xFFEC4899);
+      case 'entrenador': return const Color(0xFFF472B6);
+      case 'arbitro':    return const Color(0xFFDB2777);
+      case 'admin':      return const Color(0xFF9D174D);
       default:           return Colors.grey;
     }
   }
@@ -153,8 +179,17 @@ class _Body extends StatelessWidget {
   }
 
   Widget _iconBtn(IconData icon, Color c, VoidCallback tap) => Container(
-    decoration: BoxDecoration(color: c.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-    child: IconButton(icon: Icon(icon, color: c, size: 20), onPressed: tap),
+    margin: const EdgeInsets.symmetric(vertical: 4),
+    decoration: BoxDecoration(
+      color: c.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: IconButton(
+      icon: Icon(icon, color: c, size: 20),
+      onPressed: tap,
+      padding: const EdgeInsets.all(8),
+      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+    ),
   );
 
   Widget _fila(IconData icon, String label, String val, Color c) => Padding(
@@ -167,7 +202,7 @@ class _Body extends StatelessWidget {
     ]),
   );
 
-  // ── DatePicker sin locale ──────────────────────────────────
+  // ── DatePicker ─────────────────────────────────────────────
 
   Future<String?> _pickDate(BuildContext context, String? actual) async {
     DateTime init = DateTime(2000);
@@ -180,7 +215,7 @@ class _Body extends StatelessWidget {
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
-              primary: Color(0xFFD946EF), onPrimary: Colors.white, onSurface: Colors.black87),
+              primary: Color(0xFFEC4899), onPrimary: Colors.white, onSurface: Colors.black87),
         ),
         child: child!,
       ),
@@ -191,8 +226,9 @@ class _Body extends StatelessWidget {
   Widget _fechaBtn(String display, bool seleccionado, Color ac) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
     decoration: BoxDecoration(
-        border: Border.all(color: seleccionado ? ac : Colors.grey.shade400),
-        borderRadius: BorderRadius.circular(12)),
+      border: Border.all(color: seleccionado ? ac : Colors.grey.shade400),
+      borderRadius: BorderRadius.circular(12),
+    ),
     child: Row(children: [
       Icon(Icons.cake, color: ac),
       const SizedBox(width: 10),
@@ -203,34 +239,41 @@ class _Body extends StatelessWidget {
   );
 
   Widget _campo(TextEditingController ctrl, String label, IconData icon,
-      {TextInputType type = TextInputType.text, bool obscure = false, Color ac = const Color(0xFFD946EF)}) {
+      {TextInputType type = TextInputType.text, bool obscure = false, Color ac = const Color(0xFFEC4899)}) {
     return TextField(
       controller: ctrl, keyboardType: type, obscureText: obscure,
       decoration: InputDecoration(
         labelText: label, prefixIcon: Icon(icon, color: ac),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: ac, width: 2)),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: ac, width: 2),
+        ),
       ),
     );
   }
 
   Widget _drop<T>({required T? value, required List<DropdownMenuItem<T>> items,
-    required ValueChanged<T?> onChanged, Color ac = const Color(0xFFD946EF)}) {
+    required ValueChanged<T?> onChanged, Color ac = const Color(0xFFEC4899)}) {
     return Container(
       decoration: BoxDecoration(border: Border.all(color: ac), borderRadius: BorderRadius.circular(12)),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(value: value, isExpanded: true,
-            icon: Icon(Icons.arrow_drop_down, color: ac), items: items, onChanged: onChanged),
+        child: DropdownButton<T>(
+          value: value, isExpanded: true,
+          icon: Icon(Icons.arrow_drop_down, color: ac),
+          items: items, onChanged: onChanged,
+        ),
       ),
     );
   }
 
   void _snack(BuildContext ctx, String m, Color c) {
-    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(m), backgroundColor: c,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))));
+    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+      content: Text(m), backgroundColor: c,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ));
   }
 
   // ── AGREGAR ───────────────────────────────────────────────
@@ -255,7 +298,7 @@ class _Body extends StatelessWidget {
               final f = await _pickDate(ctx, fecha);
               if (f != null) ss(() { fecha = f; fechaDisp = _fmt(f); });
             },
-            child: _fechaBtn(fechaDisp, fecha != null, const Color(0xFFD946EF)),
+            child: _fechaBtn(fechaDisp, fecha != null, const Color(0xFFEC4899)),
           ),
           const SizedBox(height: 10),
           _drop<String>(
@@ -287,12 +330,15 @@ class _Body extends StatelessWidget {
           ],
         ])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dCtx),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD946EF),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEC4899), foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             onPressed: () async {
               if (fecha == null) { _snack(ctx, 'Selecciona fecha de nacimiento', Colors.orange); return; }
               final prov = Provider.of<UserProvider>(ctx, listen: false);
@@ -304,7 +350,7 @@ class _Body extends StatelessWidget {
               );
               Navigator.pop(dCtx);
               _snack(context, ok ? 'Usuario agregado' : 'Error al agregar',
-                  ok ? const Color(0xFFD946EF) : Colors.red);
+                  ok ? const Color(0xFFEC4899) : Colors.red);
             },
             child: const Text('Agregar'),
           ),
@@ -323,7 +369,7 @@ class _Body extends StatelessWidget {
     String sRol = rol, sPos = posicion ?? 'Portero';
     String? sFecha = fecha.isNotEmpty ? fecha : null;
     String fechaDisp = sFecha != null ? _fmt(sFecha) : 'Seleccionar fecha';
-    const ac2 = Color(0xFFA855F7);
+    const ac2 = Color(0xFFDB2777);
 
     showDialog(context: context, builder: (dCtx) => StatefulBuilder(
       builder: (ctx, ss) => AlertDialog(
@@ -381,11 +427,15 @@ class _Body extends StatelessWidget {
           ],
         ])),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dCtx),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: ac2, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ac2, foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             onPressed: () async {
               if (sFecha == null) { _snack(ctx, 'Selecciona fecha de nacimiento', Colors.orange); return; }
               final prov = Provider.of<UserProvider>(ctx, listen: false);
@@ -414,16 +464,21 @@ class _Body extends StatelessWidget {
       title: const Text('Eliminar Usuario'),
       content: Text('¿Eliminar a "$nombre"?'),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(dCtx),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
+        TextButton(
+          onPressed: () => Navigator.pop(dCtx),
+          child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+        ),
         ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red, foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
           onPressed: () async {
             final prov = Provider.of<UserProvider>(context, listen: false);
             final ok = await prov.eliminarUsuario(uid);
             Navigator.pop(dCtx);
-            _snack(context, ok ? 'Usuario eliminado' : 'Error', ok ? const Color(0xFFD946EF) : Colors.red);
+            _snack(context, ok ? 'Usuario eliminado' : 'Error',
+                ok ? const Color(0xFFEC4899) : Colors.red);
           },
           child: const Text('Eliminar'),
         ),

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../home_widgets.dart';
-
 
 class EquipoTab extends StatelessWidget {
   final String uid;
   final String rol;
   const EquipoTab({super.key, required this.uid, required this.rol});
+
+  static const Color rosa     = Color(0xFFEC4899);
+  static const Color rosaDark = Color(0xFFDB2777);
 
   Stream<QuerySnapshot> get _stream => rol == 'entrenador'
       ? FirebaseFirestore.instance.collection('equipos').where('entrenadorId', isEqualTo: uid).snapshots()
@@ -16,10 +17,10 @@ class EquipoTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0FF),
+      backgroundColor: const Color(0xFFFFF0F6),
       appBar: AppBar(
         title: Text(rol == 'entrenador' ? 'Mis Equipos' : 'Mi Equipo'),
-        backgroundColor: const Color(0xFF6B4CE6),
+        backgroundColor: rosaDark,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
         elevation: 0,
@@ -28,11 +29,21 @@ class EquipoTab extends StatelessWidget {
         stream: _stream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: rosa));
           }
           final docs = snapshot.data?.docs ?? [];
           if (docs.isEmpty) {
-            return const CardVacia(texto: 'Sin equipo asignado');
+            return Center(
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(Icons.groups_outlined, size: 72, color: rosa.withOpacity(0.3)),
+                const SizedBox(height: 16),
+                const Text('Sin equipo asignado',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFEC4899))),
+                const SizedBox(height: 8),
+                Text('Contacta con el administrador',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+              ]),
+            );
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
