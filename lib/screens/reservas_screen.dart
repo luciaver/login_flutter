@@ -3,10 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'home_widgets.dart';
 
-
-// Esta pantalla muestra TODAS las reservas que tiene el usuario.
-// Es diferente a ReservarPistaScreen (que es para CREAR una reserva nueva).
-
 class ReservasScreen extends StatelessWidget {
   final String uid;
   const ReservasScreen({super.key, required this.uid});
@@ -31,7 +27,6 @@ class ReservasScreen extends StatelessWidget {
             .orderBy('fecha', descending: false)
             .snapshots(),
         builder: (context, snap) {
-          // Mientras carga
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }

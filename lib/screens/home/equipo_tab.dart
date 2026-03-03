@@ -7,8 +7,8 @@ class EquipoTab extends StatelessWidget {
   final String rol;
   const EquipoTab({super.key, required this.uid, required this.rol});
 
-  static const Color rosa     = Color(0xFFEC4899);
-  static const Color rosaDark = Color(0xFFDB2777);
+  static const Color lila    = Color(0xFF8B5CF6);
+  static const Color lilaOsc = Color(0xFF6D28D9);
 
   Stream<QuerySnapshot> get _stream => rol == 'entrenador'
       ? FirebaseFirestore.instance.collection('equipos').where('entrenadorId', isEqualTo: uid).snapshots()
@@ -17,10 +17,10 @@ class EquipoTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF0F6),
+      backgroundColor: const Color(0xFFF3EEFF),
       appBar: AppBar(
         title: Text(rol == 'entrenador' ? 'Mis Equipos' : 'Mi Equipo'),
-        backgroundColor: rosaDark,
+        backgroundColor: lila,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
         elevation: 0,
@@ -29,16 +29,16 @@ class EquipoTab extends StatelessWidget {
         stream: _stream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: rosa));
+            return const Center(child: CircularProgressIndicator(color: lila));
           }
           final docs = snapshot.data?.docs ?? [];
           if (docs.isEmpty) {
             return Center(
               child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.groups_outlined, size: 72, color: rosa.withOpacity(0.3)),
+                Icon(Icons.groups_outlined, size: 72, color: lila.withOpacity(0.3)),
                 const SizedBox(height: 16),
                 const Text('Sin equipo asignado',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFEC4899))),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: lila)),
                 const SizedBox(height: 8),
                 Text('Contacta con el administrador',
                     style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),

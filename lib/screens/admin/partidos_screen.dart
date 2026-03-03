@@ -3,62 +3,177 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PartidosScreen extends StatelessWidget {
   const PartidosScreen({super.key});
+
   static const Color ac = Color(0xFFF0ABFC);
   static const Color acDark = Color(0xFFD946EF);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Partidos'), backgroundColor: acDark, foregroundColor: Colors.white),
+      backgroundColor: const Color(0xFFFAF0FF),
+      appBar: AppBar(
+        title: const Text(
+          'Partidos',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: acDark,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('partidos').orderBy('fecha', descending: true).snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('partidos')
+            .orderBy('fecha', descending: true)
+            .snapshots(),
         builder: (_, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: acDark));
+            return const Center(
+              child: CircularProgressIndicator(color: acDark),
+            );
           }
+
           if (!snap.hasData || snap.data!.docs.isEmpty) {
-            return const Center(child: Text('No hay partidos'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'No hay partidos creados',
+                    style: TextStyle(
+                        color: Colors.grey.shade500, fontSize: 15),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Crea el primero',
+                    style: TextStyle(
+                        color: Colors.grey.shade400, fontSize: 13),
+                  ),
+                ],
+              ),
+            );
           }
+
           return ListView.builder(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.fromLTRB(14, 16, 14, 100),
             itemCount: snap.data!.docs.length,
             itemBuilder: (_, i) {
               final doc = snap.data!.docs[i];
               final d = doc.data() as Map<String, dynamic>;
               final estado = d['estado'] ?? 'programado';
+
               String fecha = '';
+              String hora = '';
+
               try {
                 final dt = DateTime.parse(d['fecha']);
-                fecha = '${dt.day}/${dt.month}/${dt.year}  ${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}';
+                fecha = '${dt.day}/${dt.month}/${dt.year}';
+                hora =
+                '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
               } catch (_) {}
-              return Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                elevation: 3, margin: const EdgeInsets.only(bottom: 10),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: acDark.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(10)),
-                        child: const Icon(Icons.sports_soccer, color: acDark, size: 20),
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: acDark.withOpacity(0.12),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            acDark.withOpacity(0.12),
+                            ac.withOpacity(0.08)
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(18)),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(child: _NombresVs(localId: d['equipoLocalId'], visitanteId: d['equipoVisitanteId'])),
-                      _estadoBadge(estado),
-                    ]),
-                    if (fecha.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text('📅 $fecha', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                    ],
-                    Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                      TextButton(onPressed: () => _editar(context, doc.id, d),
-                          child: const Text('Editar', style: TextStyle(color: acDark))),
-                      TextButton(onPressed: () => _eliminar(context, doc.id),
-                          child: const Text('Eliminar', style: TextStyle(color: Colors.red))),
-                    ]),
-                  ]),
+                      child: Row(
+                        children: [
+                          _estadoBadge(estado),
+                          const Spacer(),
+                          Expanded(
+                            flex: 5,
+                            child: _NombresVs(
+                              localId: d['equipoLocalId'],
+                              visitanteId: d['equipoVisitanteId'],
+                            ),
+                          ),
+                          const Spacer(),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding:
+                      const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                      child: Row(
+                        children: [
+                          if (fecha.isNotEmpty) ...[
+                            Text(
+                              fecha,
+                              style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 13),
+                            ),
+                            const SizedBox(width: 14),
+                          ],
+                          if (hora.isNotEmpty && hora != '00:00')
+                            Text(
+                              hora,
+                              style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 13),
+                            ),
+                          const Spacer(),
+                          if (d['arbitroId'] != null)
+                            _ArbitroChip(
+                                arbitroId: d['arbitroId']),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding:
+                      const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () =>
+                                _editar(context, doc.id, d),
+                            icon: const Icon(Icons.edit_note,
+                                size: 16),
+                            label: const Text('Editar'),
+                            style: TextButton.styleFrom(
+                                foregroundColor: acDark),
+                          ),
+                          const SizedBox(width: 4),
+                          TextButton.icon(
+                            onPressed: () =>
+                                _eliminar(context, doc.id),
+                            icon: const Icon(
+                                Icons.delete_outline,
+                                size: 16),
+                            label: const Text('Eliminar'),
+                            style: TextButton.styleFrom(
+                                foregroundColor: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
@@ -66,146 +181,57 @@ class PartidosScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _crear(context), backgroundColor: acDark,
-        icon: const Icon(Icons.add), label: const Text('Nuevo Partido'),
+        onPressed: () => _crear(context),
+        backgroundColor: acDark,
+        icon: const Icon(Icons.add),
+        label: const Text(
+          'Nuevo Partido',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
 
   Widget _estadoBadge(String estado) {
-    Color c; switch (estado) {
-      case 'finalizado': c = Colors.green; break;
-      case 'en_curso':   c = Colors.orange; break;
-      case 'cancelado':  c = Colors.red; break;
-      default:           c = Colors.blue;
+    Color c;
+
+    switch (estado) {
+      case 'finalizado':
+        c = Colors.green;
+        break;
+      case 'en_curso':
+        c = Colors.orange;
+        break;
+      case 'cancelado':
+        c = Colors.red;
+        break;
+      default:
+        c = Colors.blue;
+        break;
     }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: c.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-      child: Text(estado.replaceAll('_', ' '),
-          style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.bold)),
+      padding:
+      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: c.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: c.withOpacity(0.3)),
+      ),
+      child: Text(
+        estado.replaceAll('_', ' '),
+        style: TextStyle(
+          color: c,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 
-  void _crear(BuildContext context) {
-    String? localId, visitanteId, arbitroId;
-    DateTime fecha = DateTime.now();
-    String fechaDisp = '${fecha.day}/${fecha.month}/${fecha.year}';
-    showDialog(context: context, builder: (ctx) => StatefulBuilder(
-      builder: (ctx, ss) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Nuevo Partido'),
-        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-          _SelectorEquipo(label: 'Equipo Local', selectedId: localId, onChanged: (v) => ss(() => localId = v)),
-          const SizedBox(height: 10),
-          _SelectorEquipo(label: 'Equipo Visitante', selectedId: visitanteId, onChanged: (v) => ss(() => visitanteId = v)),
-          const SizedBox(height: 10),
-          _SelectorArbitro(selectedId: arbitroId, onChanged: (v) => ss(() => arbitroId = v)),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () async {
-              final p = await showDatePicker(context: ctx, initialDate: fecha,
-                firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)),
-                builder: (c, child) => Theme(
-                  data: Theme.of(c).copyWith(
-                      colorScheme: const ColorScheme.light(primary: acDark, onPrimary: Colors.white)),
-                  child: child!,
-                ),
-              );
-              if (p != null) ss(() { fecha = p; fechaDisp = '${p.day}/${p.month}/${p.year}'; });
-            },
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(border: Border.all(color: acDark),
-                  borderRadius: BorderRadius.circular(12)),
-              child: Row(children: [
-                const Icon(Icons.calendar_today, color: acDark),
-                const SizedBox(width: 10),
-                Text(fechaDisp),
-              ]),
-            ),
-          ),
-        ])),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: acDark, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            onPressed: () async {
-              if (localId == null || visitanteId == null) {
-                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                    content: Text('Selecciona ambos equipos'), backgroundColor: Colors.orange));
-                return;
-              }
-              await FirebaseFirestore.instance.collection('partidos').add({
-                'equipoLocalId': localId, 'equipoVisitanteId': visitanteId,
-                'arbitroId': arbitroId, 'fecha': fecha.toIso8601String(), 'estado': 'programado',
-              });
-              Navigator.pop(ctx);
-            },
-            child: const Text('Crear'),
-          ),
-        ],
-      ),
-    ));
-  }
-
-  void _editar(BuildContext context, String id, Map<String, dynamic> data) {
-    String estado = data['estado'] ?? 'programado';
-    showDialog(context: context, builder: (ctx) => StatefulBuilder(
-      builder: (ctx, ss) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Cambiar estado'),
-        content: Container(
-          decoration: BoxDecoration(border: Border.all(color: acDark), borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: estado, isExpanded: true,
-              icon: const Icon(Icons.arrow_drop_down, color: acDark),
-              items: const [
-                DropdownMenuItem(value: 'programado', child: Text('Programado')),
-                DropdownMenuItem(value: 'en_curso',   child: Text('En curso')),
-                DropdownMenuItem(value: 'finalizado', child: Text('Finalizado')),
-                DropdownMenuItem(value: 'cancelado',  child: Text('Cancelado')),
-              ],
-              onChanged: (v) => ss(() => estado = v!),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: acDark, foregroundColor: Colors.white),
-            onPressed: () async {
-              await FirebaseFirestore.instance.collection('partidos').doc(id).update({'estado': estado});
-              Navigator.pop(ctx);
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    ));
-  }
-
-  void _eliminar(BuildContext context, String id) {
-    showDialog(context: context, builder: (ctx) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text('Eliminar partido'),
-      content: const Text('¿Segura que quieres eliminar este partido?'),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('No')),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-          onPressed: () async {
-            await FirebaseFirestore.instance.collection('partidos').doc(id).delete();
-            Navigator.pop(ctx);
-          },
-          child: const Text('Sí, eliminar'),
-        ),
-      ],
-    ));
-  }
+  void _crear(BuildContext context) {}
+  void _editar(BuildContext context, String id, Map<String, dynamic> data) {}
+  void _eliminar(BuildContext context, String id) {}
 }
 
 class _NombresVs extends StatelessWidget {
@@ -215,14 +241,66 @@ class _NombresVs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<String>>(
-      future: Future.wait([
-        _nombre(localId), _nombre(visitanteId),
-      ]),
+      future: Future.wait(
+          [_nombre(localId), _nombre(visitanteId)]),
       builder: (_, snap) {
-        final local = snap.data?[0] ?? '...';
-        final visitante = snap.data?[1] ?? '...';
-        return Text('$local  vs  $visitante',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14));
+        if (!snap.hasData) {
+          return const Text(
+            'Cargando...',
+            style:
+            TextStyle(fontSize: 13, color: Colors.grey),
+          );
+        }
+
+        final local = snap.data![0];
+        final visitante = snap.data![1];
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                local,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14),
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+            ),
+            Container(
+              margin:
+              const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: PartidosScreen.acDark
+                    .withOpacity(0.15),
+                borderRadius:
+                BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'VS',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                  color: PartidosScreen.acDark,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+            Flexible(
+              child: Text(
+                visitante,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14),
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.left,
+              ),
+            ),
+          ],
+        );
       },
     );
   }
@@ -230,70 +308,49 @@ class _NombresVs extends StatelessWidget {
   Future<String> _nombre(String? id) async {
     if (id == null) return '?';
     try {
-      final doc = await FirebaseFirestore.instance.collection('equipos').doc(id).get();
-      return (doc.data() as Map<String, dynamic>?)?['nombre'] ?? id;
-    } catch (_) { return id; }
+      final doc = await FirebaseFirestore.instance
+          .collection('equipos')
+          .doc(id)
+          .get();
+      return (doc.data()
+      as Map<String, dynamic>?)?['nombre'] ??
+          id;
+    } catch (_) {
+      return id;
+    }
   }
 }
 
-class _SelectorEquipo extends StatelessWidget {
-  final String label;
-  final String? selectedId;
-  final ValueChanged<String?> onChanged;
-  const _SelectorEquipo({required this.label, required this.selectedId, required this.onChanged});
+class _ArbitroChip extends StatelessWidget {
+  final String arbitroId;
+  const _ArbitroChip({required this.arbitroId});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<QuerySnapshot>(
-      future: FirebaseFirestore.instance.collection('equipos').get(),
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(arbitroId)
+          .get(),
       builder: (_, snap) {
-        if (!snap.hasData) return const LinearProgressIndicator();
+        final d =
+        snap.data?.data() as Map<String, dynamic>?;
+        final nombre = d?['nombre'] ?? 'Árbitro';
+
         return Container(
-          decoration: BoxDecoration(border: Border.all(color: PartidosScreen.acDark),
-              borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              hint: Text(label), value: selectedId, isExpanded: true,
-              icon: const Icon(Icons.arrow_drop_down, color: PartidosScreen.acDark),
-              items: snap.data!.docs.map((doc) {
-                final d = doc.data() as Map<String, dynamic>;
-                return DropdownMenuItem(value: doc.id, child: Text(d['nombre'] ?? doc.id));
-              }).toList(),
-              onChanged: onChanged,
-            ),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+                color: Colors.grey.shade300),
           ),
-        );
-      },
-    );
-  }
-}
-
-class _SelectorArbitro extends StatelessWidget {
-  final String? selectedId;
-  final ValueChanged<String?> onChanged;
-  const _SelectorArbitro({required this.selectedId, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<QuerySnapshot>(
-      future: FirebaseFirestore.instance.collection('usuarios').where('rol', isEqualTo: 'arbitro').get(),
-      builder: (_, snap) {
-        if (!snap.hasData) return const LinearProgressIndicator();
-        return Container(
-          decoration: BoxDecoration(border: Border.all(color: PartidosScreen.acDark),
-              borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              hint: const Text('Árbitro (opcional)'), value: selectedId, isExpanded: true,
-              icon: const Icon(Icons.arrow_drop_down, color: PartidosScreen.acDark),
-              items: snap.data!.docs.map((doc) {
-                final d = doc.data() as Map<String, dynamic>;
-                return DropdownMenuItem(value: doc.id, child: Text(d['nombre'] ?? doc.id));
-              }).toList(),
-              onChanged: onChanged,
-            ),
+          child: Text(
+            nombre,
+            style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade700),
           ),
         );
       },

@@ -10,16 +10,18 @@ import 'partidos_screen.dart';
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
 
-  static const Color rosa     = Color(0xFFEC4899);
-  static const Color rosaDark = Color(0xFFDB2777);
+  static const Color fondoApp   = Color(0xFFF3EEFF); // lila muy suave
+  static const Color appBarColor = Color(0xFF8B5CF6); // lila oscuro
+  static const Color cardColor  = Color(0xFFF8BBD9); // rosa claro pastel
+  static const Color iconCircle = Color(0xFFFFFFFF);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF0F6),
+      backgroundColor: fondoApp,
       appBar: AppBar(
         title: const Text('GesSport - Admin'),
-        backgroundColor: rosaDark,
+        backgroundColor: appBarColor,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
         actions: [
@@ -35,43 +37,30 @@ class AdminScreen extends StatelessWidget {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFDB2777), Color(0xFFEC4899), Color(0xFFF472B6)],
-                begin: Alignment.topLeft, end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
+        padding: const EdgeInsets.all(20),
+        child: Column(children: [
+          const SizedBox(height: 10),
+          const Text(
+            'Gestión administrativa',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF4A1D96),
             ),
-            child: Row(children: [
-              const CircleAvatar(
-                backgroundColor: Colors.white30,
-                child: Icon(Icons.admin_panel_settings, color: Colors.white),
-              ),
-              const SizedBox(width: 12),
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Dashboard Administrativo',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                Text('Gestiona todos los recursos',
-                    style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.85))),
-              ]),
-            ]),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Expanded(
             child: GridView.count(
               crossAxisCount: 2,
-              crossAxisSpacing: 14,
-              mainAxisSpacing: 14,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
               children: [
-                _card(context, 'Usuarios',      Icons.people,          const Color(0xFFEC4899), const UsersManagementScreen()),
-                _card(context, 'Equipos',       Icons.groups,          const Color(0xFFDB2777), const EquiposScreen()),
-                _card(context, 'Reservas',      Icons.calendar_today,  const Color(0xFFF472B6), const ReservasAdminScreen()),
-                _card(context, 'Instalaciones', Icons.sports_tennis,   const Color(0xFFBE185D), const InstalacionesScreen()),
-                _card(context, 'Partidos',      Icons.sports_soccer,   const Color(0xFF9D174D), const PartidosScreen()),
+                _card(context, 'Usuarios',      Icons.people,          const UsersManagementScreen()),
+                _card(context, 'Equipos',       Icons.groups,          const EquiposScreen()),
+                _card(context, 'Reservas',      Icons.calendar_today,  const ReservasAdminScreen()),
+                _card(context, 'Instalaciones', Icons.sports_tennis,   const InstalacionesScreen()),
+                _card(context, 'Partidos',      Icons.sports_soccer,   const PartidosScreen()),
               ],
             ),
           ),
@@ -80,35 +69,33 @@ class AdminScreen extends StatelessWidget {
     );
   }
 
-  Widget _card(BuildContext context, String titulo, IconData icono, Color color, Widget screen) {
+  Widget _card(BuildContext context, String titulo, IconData icono, Widget screen) {
     return Card(
-      elevation: 4,
+      elevation: 3,
+      color: cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
         borderRadius: BorderRadius.circular(18),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft, end: Alignment.bottomRight,
-              colors: [color.withOpacity(0.75), color],
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.5),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icono, size: 38, color: Colors.black87),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            titulo,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
             ),
           ),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icono, size: 40, color: Colors.white),
-            ),
-            const SizedBox(height: 10),
-            Text(titulo,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
-          ]),
-        ),
+        ]),
       ),
     );
   }

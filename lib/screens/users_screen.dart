@@ -59,7 +59,6 @@ class _UserScreenState extends State<UserScreen> {
           child: Column(
             children: [
 
-              // Header
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Row(
@@ -94,7 +93,6 @@ class _UserScreenState extends State<UserScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
 
-                        // Avatar sin sombra
                         Container(
                           padding: const EdgeInsets.all(30),
                           decoration: const BoxDecoration(
@@ -102,7 +100,7 @@ class _UserScreenState extends State<UserScreen> {
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
-                            Icons.person, // Aquí aparece el icono
+                            Icons.person,
                             size: 80,
                             color: Colors.white,
                           ),

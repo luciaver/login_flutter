@@ -3,31 +3,28 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EquiposScreen extends StatelessWidget {
   const EquiposScreen({super.key});
-  static const Color ac = Color(0xFFEC4899);
-  static const Color acDark = Color(0xFFDB2777);
+  static const Color fondo   = Color(0xFFF3EEFF);
+  static const Color appBar  = Color(0xFF8B5CF6);
+  static const Color azul    = Color(0xFF7C3AED);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: fondo,
       appBar: AppBar(
         title: const Text('Equipos'),
-        backgroundColor: acDark,
+        backgroundColor: appBar,
         foregroundColor: Colors.white,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('equipos').snapshots(),
         builder: (_, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: ac));
+            return const Center(child: CircularProgressIndicator(color: appBar));
           }
           if (!snap.hasData || snap.data!.docs.isEmpty) {
-            return Center(
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.groups_outlined, size: 64, color: Colors.grey.shade300),
-                const SizedBox(height: 12),
-                Text('No hay equipos', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
-              ]),
-            );
+            return Center(child: Text('No hay equipos',
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 16)));
           }
           return ListView.builder(
             padding: const EdgeInsets.all(14),
@@ -35,107 +32,91 @@ class EquiposScreen extends StatelessWidget {
             itemBuilder: (_, i) {
               final doc = snap.data!.docs[i];
               final d = doc.data() as Map<String, dynamic>;
-              final nombre     = d['nombre'] ?? 'Equipo';
-              final deporte    = d['deporte'] ?? '';
-              final jugadorIds = List<String>.from(d['jugadoresIds'] ?? []);
+              final nombre       = d['nombre'] ?? 'Equipo';
+              final deporte      = d['deporte'] ?? '';
+              final jugadorIds   = List<String>.from(d['jugadoresIds'] ?? []);
               final entrenadorId = d['entrenadorId'] as String?;
 
               return Card(
+                color: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 3,
                 margin: const EdgeInsets.only(bottom: 14),
-                child: Column(
-                  children: [
-                    // Cabecera del equipo
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [acDark.withOpacity(0.8), ac],
-                          begin: Alignment.topLeft, end: Alignment.bottomRight,
-                        ),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                child: Column(children: [
+                  // Cabecera
+                  Container(
+                    decoration: BoxDecoration(
+                      color: appBar.withOpacity(0.85),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    ),
+                    padding: const EdgeInsets.all(14),
+                    child: Row(children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.white.withOpacity(0.3),
+                        child: Text(nombre[0].toUpperCase(),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
                       ),
-                      padding: const EdgeInsets.all(14),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('$deporte · ${jugadorIds.length} jugadores',
+                              style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
+                        ]),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                        child: IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.white, size: 20),
+                          onPressed: () => _editar(context, doc.id, d),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.3), borderRadius: BorderRadius.circular(8)),
+                        child: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.white, size: 20),
+                          onPressed: () => _eliminar(context, doc.id, nombre),
+                        ),
+                      ),
+                    ]),
+                  ),
+                  // Entrenador
+                  if (entrenadorId != null) _EntrenadorTile(entrenadorId: entrenadorId)
+                  else Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    child: Row(children: [
+                      Icon(Icons.sports, color: Colors.grey.shade400, size: 18),
+                      const SizedBox(width: 8),
+                      Text('Sin entrenador asignado',
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontStyle: FontStyle.italic)),
+                    ]),
+                  ),
+                  if (jugadorIds.isNotEmpty) ...[
+                    Divider(height: 1, color: Colors.grey.shade200),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
                       child: Row(children: [
-                        CircleAvatar(
-                          backgroundColor: Colors.white.withOpacity(0.3),
-                          child: Text(
-                            nombre[0].toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                            Text('$deporte · ${jugadorIds.length} jugadores',
-                                style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
-                          ]),
-                        ),
-                        // Botones editar/eliminar separados
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.white, size: 20),
-                            onPressed: () => _editar(context, doc.id, d),
-                            tooltip: 'Editar equipo',
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.white, size: 20),
-                            onPressed: () => _eliminar(context, doc.id, nombre),
-                            tooltip: 'Eliminar equipo',
-                          ),
-                        ),
+                        Icon(Icons.people, color: azul, size: 16),
+                        const SizedBox(width: 6),
+                        Text('Jugadores (${jugadorIds.length})',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: azul, fontSize: 13)),
                       ]),
                     ),
-                    // Entrenador
-                    if (entrenadorId != null)
-                      _EntrenadorTile(entrenadorId: entrenadorId),
-                    if (entrenadorId == null)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        child: Row(children: [
-                          Icon(Icons.sports, color: Colors.grey.shade400, size: 18),
-                          const SizedBox(width: 8),
-                          Text('Sin entrenador asignado',
-                              style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontStyle: FontStyle.italic)),
-                        ]),
-                      ),
-                    if (jugadorIds.isNotEmpty) ...[
-                      Divider(height: 1, color: Colors.grey.shade200),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
-                        child: Row(children: [
-                          const Icon(Icons.people, color: ac, size: 16),
-                          const SizedBox(width: 6),
-                          Text('Jugadores (${jugadorIds.length})',
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: ac, fontSize: 13)),
-                        ]),
-                      ),
-                      ...jugadorIds.map((jid) => _JugadorTile(uid: jid)),
-                    ],
-                    if (jugadorIds.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
-                        child: Row(children: [
-                          Icon(Icons.person_off_outlined, color: Colors.grey.shade400, size: 18),
-                          const SizedBox(width: 8),
-                          Text('Sin jugadores', style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontStyle: FontStyle.italic)),
-                        ]),
-                      ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
+                    ...jugadorIds.map((jid) => _JugadorTile(uid: jid)),
+                  ] else Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
+                    child: Row(children: [
+                      Icon(Icons.person_off_outlined, color: Colors.grey.shade400, size: 18),
+                      const SizedBox(width: 8),
+                      Text('Sin jugadores',
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontStyle: FontStyle.italic)),
+                    ]),
+                  ),
+                  const SizedBox(height: 8),
+                ]),
               );
             },
           );
@@ -143,7 +124,7 @@ class EquiposScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _agregar(context),
-        backgroundColor: acDark,
+        backgroundColor: appBar,
         icon: const Icon(Icons.add),
         label: const Text('Nuevo Equipo'),
       ),
@@ -161,7 +142,7 @@ class EquiposScreen extends StatelessWidget {
       builder: (ctx, ss) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(children: [
-          Icon(Icons.group_add, color: acDark),
+          Icon(Icons.group_add, color: appBar),
           SizedBox(width: 8),
           Text('Nuevo Equipo'),
         ]),
@@ -176,15 +157,12 @@ class EquiposScreen extends StatelessWidget {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: acDark, foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+                backgroundColor: appBar, foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             onPressed: () async {
               if (nc.text.trim().isEmpty) return;
               await FirebaseFirestore.instance.collection('equipos').add({
-                'nombre': nc.text.trim(),
-                'deporte': deporte,
-                'jugadoresIds': [],
+                'nombre': nc.text.trim(), 'deporte': deporte, 'jugadoresIds': [],
                 if (entrenadorId != null) 'entrenadorId': entrenadorId,
               });
               Navigator.pop(ctx);
@@ -205,7 +183,7 @@ class EquiposScreen extends StatelessWidget {
       builder: (ctx, ss) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(children: [
-          Icon(Icons.edit, color: acDark),
+          Icon(Icons.edit, color: appBar),
           SizedBox(width: 8),
           Text('Editar Equipo'),
         ]),
@@ -220,19 +198,12 @@ class EquiposScreen extends StatelessWidget {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: acDark, foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+                backgroundColor: appBar, foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             onPressed: () async {
-              final updateData = <String, dynamic>{
-                'nombre': nc.text.trim(),
-                'deporte': deporte,
-              };
-              if (entrenadorId != null) {
-                updateData['entrenadorId'] = entrenadorId;
-              } else {
-                updateData['entrenadorId'] = FieldValue.delete();
-              }
+              final updateData = <String, dynamic>{'nombre': nc.text.trim(), 'deporte': deporte};
+              if (entrenadorId != null) updateData['entrenadorId'] = entrenadorId;
+              else updateData['entrenadorId'] = FieldValue.delete();
               await FirebaseFirestore.instance.collection('equipos').doc(id).update(updateData);
               Navigator.pop(ctx);
             },
@@ -265,31 +236,27 @@ class EquiposScreen extends StatelessWidget {
   Widget _campo(TextEditingController ctrl, String label, IconData icon) => TextField(
     controller: ctrl,
     decoration: InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: acDark),
+      labelText: label, prefixIcon: Icon(icon, color: appBar),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: acDark, width: 2),
-      ),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: appBar, width: 2)),
     ),
   );
 
   Widget _dropDeporte(String value, ValueChanged<String?> onChanged) => Container(
-    decoration: BoxDecoration(border: Border.all(color: acDark), borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(border: Border.all(color: appBar), borderRadius: BorderRadius.circular(12)),
     padding: const EdgeInsets.symmetric(horizontal: 12),
     child: DropdownButtonHideUnderline(
       child: DropdownButton<String>(
         value: value, isExpanded: true,
-        icon: const Icon(Icons.arrow_drop_down, color: acDark),
+        icon: const Icon(Icons.arrow_drop_down, color: appBar),
         items: _deportes.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
         onChanged: onChanged,
       ),
     ),
   );
 }
-
-// ── Tile del entrenador ─────────────────────────────────────
 
 class _EntrenadorTile extends StatelessWidget {
   final String entrenadorId;
@@ -306,19 +273,21 @@ class _EntrenadorTile extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(14, 10, 14, 0),
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFFEC4899).withOpacity(0.08),
+            color: const Color(0xFF8B5CF6).withOpacity(0.08),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFEC4899).withOpacity(0.3)),
+            border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
           ),
           child: Row(children: [
             const CircleAvatar(
               radius: 16,
-              backgroundColor: Color(0xFFEC4899),
+              backgroundColor: Color(0xFF8B5CF6),
               child: Icon(Icons.sports, color: Colors.white, size: 16),
             ),
             const SizedBox(width: 10),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('ENTRENADOR', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFEC4899), letterSpacing: 1)),
+              const Text('ENTRENADOR',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold,
+                      color: Color(0xFF8B5CF6), letterSpacing: 1)),
               Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             ]),
           ]),
@@ -327,8 +296,6 @@ class _EntrenadorTile extends StatelessWidget {
     );
   }
 }
-
-// ── Tile de jugador ─────────────────────────────────────────
 
 class _JugadorTile extends StatelessWidget {
   final String uid;
@@ -347,21 +314,21 @@ class _JugadorTile extends StatelessWidget {
           child: Row(children: [
             CircleAvatar(
               radius: 14,
-              backgroundColor: const Color(0xFFEC4899).withOpacity(0.15),
-              child: const Icon(Icons.person, size: 14, color: Color(0xFFEC4899)),
+              backgroundColor: const Color(0xFF7C3AED).withOpacity(0.15),
+              child: const Icon(Icons.person, size: 14, color: Color(0xFF7C3AED)),
             ),
             const SizedBox(width: 10),
-            Expanded(
-              child: Text(nombre, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-            ),
+            Expanded(child: Text(nombre,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500))),
             if (posicion.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEC4899).withOpacity(0.1),
+                  color: const Color(0xFF7C3AED).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(posicion, style: const TextStyle(fontSize: 11, color: Color(0xFFEC4899))),
+                child: Text(posicion,
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF7C3AED))),
               ),
           ]),
         );
@@ -369,8 +336,6 @@ class _JugadorTile extends StatelessWidget {
     );
   }
 }
-
-// ── Selector de entrenador ──────────────────────────────────
 
 class _SelectorEntrenador extends StatelessWidget {
   final String? selectedId;
@@ -380,33 +345,30 @@ class _SelectorEntrenador extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<QuerySnapshot>(
-      future: FirebaseFirestore.instance.collection('usuarios').where('rol', isEqualTo: 'entrenador').get(),
+      future: FirebaseFirestore.instance
+          .collection('usuarios').where('rol', isEqualTo: 'entrenador').get(),
       builder: (_, snap) {
-        if (!snap.hasData) return const LinearProgressIndicator(color: EquiposScreen.acDark);
+        if (!snap.hasData) return const LinearProgressIndicator(color: EquiposScreen.appBar);
         return Container(
           decoration: BoxDecoration(
-            border: Border.all(color: EquiposScreen.acDark),
-            borderRadius: BorderRadius.circular(12),
-          ),
+              border: Border.all(color: EquiposScreen.appBar),
+              borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               hint: const Row(children: [
-                Icon(Icons.sports, color: EquiposScreen.acDark, size: 18),
+                Icon(Icons.sports, color: EquiposScreen.appBar, size: 18),
                 SizedBox(width: 8),
                 Text('Entrenador (opcional)'),
               ]),
-              value: selectedId,
-              isExpanded: true,
-              icon: const Icon(Icons.arrow_drop_down, color: EquiposScreen.acDark),
+              value: selectedId, isExpanded: true,
+              icon: const Icon(Icons.arrow_drop_down, color: EquiposScreen.appBar),
               items: [
                 const DropdownMenuItem<String>(value: null, child: Text('Sin entrenador')),
                 ...snap.data!.docs.map((doc) {
                   final d = doc.data() as Map<String, dynamic>;
                   return DropdownMenuItem<String>(
-                    value: doc.id,
-                    child: Text(d['nombre'] ?? doc.id),
-                  );
+                      value: doc.id, child: Text(d['nombre'] ?? doc.id));
                 }),
               ],
               onChanged: onChanged,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// ─── Sección título ───────────────────────────────────────────
 class SeccionTitulo extends StatelessWidget {
   final String titulo;
   final IconData icono;
@@ -20,7 +19,6 @@ class SeccionTitulo extends StatelessWidget {
   }
 }
 
-// ─── Card vacía ───────────────────────────────────────────────
 class CardVacia extends StatelessWidget {
   final String texto;
   const CardVacia({super.key, required this.texto});
@@ -45,7 +43,6 @@ class CardVacia extends StatelessWidget {
   }
 }
 
-// ─── Stats row ────────────────────────────────────────────────
 class StatsRow extends StatelessWidget {
   final String uid;
   final String rol;
@@ -57,22 +54,34 @@ class StatsRow extends StatelessWidget {
       return _StatCard(
         label: 'Partidos',
         icono: Icons.sports_soccer,
-        color: const Color(0xFF8B5CF6),
-        stream: FirebaseFirestore.instance.collection('partidos').where('arbitroId', isEqualTo: uid).snapshots(),
+        color: const Color(0xFFBEA6FF),
+        stream: FirebaseFirestore.instance
+            .collection('partidos')
+            .where('arbitroId', isEqualTo: uid)
+            .snapshots(),
       );
     }
     return Row(
       children: [
         Expanded(child: _StatCard(
-          label: 'Reservas', icono: Icons.calendar_today, color: const Color(0xFF6B4CE6),
-          stream: FirebaseFirestore.instance.collection('reservas').where('usuarioId', isEqualTo: uid).snapshots(),
+          label: 'Reservas', icono: Icons.calendar_today, color: const Color(0xFF8B5CF6),
+          stream: FirebaseFirestore.instance
+              .collection('reservas')
+              .where('usuarioId', isEqualTo: uid)
+              .snapshots(),
         )),
         const SizedBox(width: 12),
         Expanded(child: _StatCard(
-          label: 'Equipos', icono: Icons.groups, color: const Color(0xFFF59E0B),
+          label: 'Equipos', icono: Icons.groups, color: const Color(0xFF7C3AED),
           stream: rol == 'entrenador'
-              ? FirebaseFirestore.instance.collection('equipos').where('entrenadorId', isEqualTo: uid).snapshots()
-              : FirebaseFirestore.instance.collection('equipos').where('jugadoresIds', arrayContains: uid).snapshots(),
+              ? FirebaseFirestore.instance
+              .collection('equipos')
+              .where('entrenadorId', isEqualTo: uid)
+              .snapshots()
+              : FirebaseFirestore.instance
+              .collection('equipos')
+              .where('jugadoresIds', arrayContains: uid)
+              .snapshots(),
         )),
       ],
     );
@@ -113,7 +122,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ─── Reserva card ─────────────────────────────────────────────
+//Reserva card
 class ReservaCard extends StatelessWidget {
   final Map<String, dynamic> data;
   const ReservaCard({super.key, required this.data});
@@ -144,14 +153,16 @@ class ReservaCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: const Color(0xFF6B4CE6).withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: const Color(0xFF6B4CE6).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.sports_tennis, color: Color(0xFF6B4CE6), size: 22),
+            decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.sports_tennis, color: Color(0xFF8B5CF6), size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -159,14 +170,18 @@ class ReservaCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(pistaNombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text('$fecha  $horaInicio - $horaFin', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text('$fecha  $horaInicio - $horaFin',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: _color(estado).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-            child: Text(estado, style: TextStyle(color: _color(estado), fontSize: 11, fontWeight: FontWeight.bold)),
+            decoration: BoxDecoration(
+                color: _color(estado).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8)),
+            child: Text(estado,
+                style: TextStyle(color: _color(estado), fontSize: 11, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -174,7 +189,7 @@ class ReservaCard extends StatelessWidget {
   }
 }
 
-// ─── Próximas reservas ────────────────────────────────────────
+//Próximas reservas
 class ProximasReservas extends StatelessWidget {
   final String uid;
   const ProximasReservas({super.key, required this.uid});
@@ -182,19 +197,33 @@ class ProximasReservas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('reservas').where('usuarioId', isEqualTo: uid).orderBy('fecha').limit(3).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('reservas')
+          .where('usuarioId', isEqualTo: uid)
+          .limit(3)
+          .snapshots(),
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) return const CardVacia(texto: 'No tienes reservas próximas');
+
+        final sorted = List.of(docs);
+        sorted.sort((a, b) {
+          final fa = (a.data() as Map<String, dynamic>)['fecha'] as String? ?? '';
+          final fb = (b.data() as Map<String, dynamic>)['fecha'] as String? ?? '';
+          return fa.compareTo(fb);
+        });
+
         return Column(
-          children: docs.map((d) => ReservaCard(data: d.data() as Map<String, dynamic>)).toList(),
+          children: sorted
+              .map((d) => ReservaCard(data: d.data() as Map<String, dynamic>))
+              .toList(),
         );
       },
     );
   }
 }
 
-// ─── Partidos list ────────────────────────────────────────────
+//Partiados lista
 class PartidosList extends StatelessWidget {
   final String uid;
   final bool soloArbitro;
@@ -203,19 +232,24 @@ class PartidosList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('partidos').where('arbitroId', isEqualTo: uid).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('partidos')
+          .where('arbitroId', isEqualTo: uid)
+          .snapshots(),
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) return const CardVacia(texto: 'Sin partidos asignados');
         return Column(
-          children: docs.map((d) => PartidoCard(data: d.data() as Map<String, dynamic>)).toList(),
+          children: docs
+              .map((d) => PartidoCard(data: d.data() as Map<String, dynamic>))
+              .toList(),
         );
       },
     );
   }
 }
 
-// ─── Partidos del entrenador ──────────────────────────────────
+// Partidos del entrenador
 class PartidosEntrenador extends StatelessWidget {
   final String uid;
   const PartidosEntrenador({super.key, required this.uid});
@@ -223,17 +257,26 @@ class PartidosEntrenador extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<QuerySnapshot>(
-      future: FirebaseFirestore.instance.collection('equipos').where('entrenadorId', isEqualTo: uid).get(),
+      future: FirebaseFirestore.instance
+          .collection('equipos')
+          .where('entrenadorId', isEqualTo: uid)
+          .get(),
       builder: (ctx, snap) {
         final ids = snap.data?.docs.map((d) => d.id).toList() ?? [];
         if (ids.isEmpty) return const CardVacia(texto: 'Sin partidos pendientes');
         return StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('partidos').where('equipoLocalId', whereIn: ids).snapshots(),
+          stream: FirebaseFirestore.instance
+              .collection('partidos')
+              .where('equipoLocalId', whereIn: ids)
+              .snapshots(),
           builder: (ctx2, snap2) {
             final docs = snap2.data?.docs ?? [];
             if (docs.isEmpty) return const CardVacia(texto: 'Sin partidos pendientes');
             return Column(
-              children: docs.take(3).map((d) => PartidoCard(data: d.data() as Map<String, dynamic>)).toList(),
+              children: docs
+                  .take(3)
+                  .map((d) => PartidoCard(data: d.data() as Map<String, dynamic>))
+                  .toList(),
             );
           },
         );
@@ -242,7 +285,7 @@ class PartidosEntrenador extends StatelessWidget {
   }
 }
 
-// ─── Partido card ─────────────────────────────────────────────
+// Partido card
 class PartidoCard extends StatelessWidget {
   final Map<String, dynamic> data;
   const PartidoCard({super.key, required this.data});
@@ -271,14 +314,18 @@ class PartidoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: const Color(0xFF8B5CF6).withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.sports_soccer, color: Color(0xFF8B5CF6), size: 20),
+            decoration: BoxDecoration(
+                color: const Color(0xFFBEA6FF).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12)),
+            child: const Icon(Icons.sports_soccer, color: Color(0xFFBEA6FF), size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -292,14 +339,19 @@ class PartidoCard extends StatelessWidget {
                     _NombreEquipo(id: data['equipoVisitanteId']),
                   ],
                 ),
-                Text('$fecha  ${data['horaInicio'] ?? ''}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text('$fecha  ${data['horaInicio'] ?? ''}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: _color(estado).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-            child: Text(estado.replaceAll('_', ' '), style: TextStyle(color: _color(estado), fontSize: 10, fontWeight: FontWeight.bold)),
+            decoration: BoxDecoration(
+                color: _color(estado).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8)),
+            child: Text(estado.replaceAll('_', ' '),
+                style: TextStyle(
+                    color: _color(estado), fontSize: 10, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -318,19 +370,26 @@ class _NombreEquipo extends StatelessWidget {
       future: FirebaseFirestore.instance.collection('equipos').doc(id).get(),
       builder: (ctx, snap) {
         final d = snap.data?.data() as Map<String, dynamic>?;
-        return Text(d?['nombre'] ?? id!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), overflow: TextOverflow.ellipsis);
+        return Text(d?['nombre'] ?? id!,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            overflow: TextOverflow.ellipsis);
       },
     );
   }
 }
 
-// ─── Equipo detalle card ──────────────────────────────────────
+//Equipo detalle card
 class EquipoDetalleCard extends StatelessWidget {
   final String equipoId;
   final Map<String, dynamic> data;
   final String rol;
   final String uid;
-  const EquipoDetalleCard({super.key, required this.equipoId, required this.data, required this.rol, required this.uid});
+  const EquipoDetalleCard(
+      {super.key,
+        required this.equipoId,
+        required this.data,
+        required this.rol,
+        required this.uid});
 
   @override
   Widget build(BuildContext context) {
@@ -343,8 +402,9 @@ class EquipoDetalleCard extends StatelessWidget {
       elevation: 3,
       child: ExpansionTile(
         leading: CircleAvatar(
-          backgroundColor: const Color(0xFFF59E0B),
-          child: Text(nombre[0].toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          backgroundColor: const Color(0xFF7C3AED),
+          child: Text(nombre[0].toUpperCase(),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
         title: Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text('${jugadoresIds.length} jugadores'),
@@ -354,29 +414,13 @@ class EquipoDetalleCard extends StatelessWidget {
             child: Column(
               children: [
                 ...jugadoresIds.map((jid) => _UsuarioTile(uid: jid)),
-                if (rol == 'entrenador') ...[
-                  const Divider(),
-                  ElevatedButton.icon(
-                    onPressed: () => _cancelarEntrenamiento(context),
-                    icon: const Icon(Icons.warning_amber),
-                    label: const Text('Cancelar entrenamiento'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE91E8C),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ],
+
               ],
             ),
           ),
         ],
       ),
     );
-  }
-
-  void _cancelarEntrenamiento(BuildContext context) {
-    crearIncidencia(context, uid, data['nombre'] ?? '', 'entrenamiento_cancelado', 'Entrenamiento cancelado');
   }
 }
 
@@ -392,7 +436,10 @@ class _UsuarioTile extends StatelessWidget {
         final d = snap.data?.data() as Map<String, dynamic>?;
         return ListTile(
           dense: true,
-          leading: const CircleAvatar(radius: 14, backgroundColor: Color(0xFFE8E0FF), child: Icon(Icons.person, size: 16, color: Color(0xFF6B4CE6))),
+          leading: const CircleAvatar(
+              radius: 14,
+              backgroundColor: Color(0xFFF3EEFF),
+              child: Icon(Icons.person, size: 16, color: Color(0xFF8B5CF6))),
           title: Text(d?['nombre'] ?? 'Jugador'),
           subtitle: (d?['posicion'] ?? '').isNotEmpty ? Text(d!['posicion']) : null,
         );
@@ -401,131 +448,7 @@ class _UsuarioTile extends StatelessWidget {
   }
 }
 
-// ─── Botón incidencia ─────────────────────────────────────────
-class BotonIncidencia extends StatelessWidget {
-  final String uid;
-  final String tipo;
-  const BotonIncidencia({super.key, required this.uid, required this.tipo});
-
-  bool get _esEntrenador => tipo == 'entrenamiento_cancelado';
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _mostrarDialogo(context),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE91E8C).withOpacity(0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE91E8C).withOpacity(0.3)),
-        ),
-        child: Row(
-          children: [
-            Icon(_esEntrenador ? Icons.cancel_presentation : Icons.person_off_outlined, color: const Color(0xFFE91E8C), size: 28),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_esEntrenador ? 'Cancelar entrenamiento' : 'No puedo asistir',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFE91E8C))),
-                  Text(_esEntrenador ? 'Notifica la cancelación' : 'Notifica que no asistirás',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _mostrarDialogo(BuildContext context) {
-    final ctrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(_esEntrenador ? 'Cancelar entrenamiento' : 'No puedo asistir'),
-        content: TextField(
-          controller: ctrl,
-          maxLines: 3,
-          decoration: InputDecoration(
-            hintText: 'Motivo (opcional)',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () async {
-              await crearIncidencia(context, uid, '', tipo,
-                  ctrl.text.trim().isNotEmpty ? ctrl.text.trim() : (_esEntrenador ? 'Entrenamiento cancelado' : 'El jugador no puede asistir'));
-              Navigator.pop(ctx);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE91E8C), foregroundColor: Colors.white),
-            child: const Text('Enviar'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Lista incidencias ────────────────────────────────────────
-class IncidenciasList extends StatelessWidget {
-  final String uid;
-  const IncidenciasList({super.key, required this.uid});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('incidencias').where('usuarioId', isEqualTo: uid).orderBy('fecha', descending: true).limit(5).snapshots(),
-      builder: (context, snapshot) {
-        final docs = snapshot.data?.docs ?? [];
-        if (docs.isEmpty) return const CardVacia(texto: 'Sin incidencias registradas');
-        return Column(
-          children: docs.map((d) {
-            final data = d.data() as Map<String, dynamic>;
-            final tipo = data['tipo'] ?? '';
-            final mensaje = data['mensaje'] ?? '';
-            String fecha = '';
-            try { final dt = DateTime.parse(data['fecha']); fecha = '${dt.day}/${dt.month}/${dt.year}'; } catch (_) {}
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE91E8C).withOpacity(0.06),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE91E8C).withOpacity(0.2)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.warning_amber, color: Color(0xFFE91E8C), size: 18),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(tipo.replaceAll('_', ' '), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFE91E8C))),
-                        if (mensaje.isNotEmpty) Text(mensaje, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                  Text(fecha, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                ],
-              ),
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
-}
-
-// ─── Perfil info card ─────────────────────────────────────────
+// perfil de card
 class PerfilInfoCard extends StatelessWidget {
   final Map<String, dynamic> data;
   const PerfilInfoCard({super.key, required this.data});
@@ -545,7 +468,12 @@ class PerfilInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: const Color(0xFF6B4CE6).withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0xFF8B5CF6).withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         children: items.asMap().entries.map((e) {
@@ -559,15 +487,22 @@ class PerfilInfoCard extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: const Color(0xFF6B4CE6).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                      child: Icon(item['icon'] as IconData, color: const Color(0xFF6B4CE6), size: 18),
+                      decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Icon(item['icon'] as IconData,
+                          color: const Color(0xFF8B5CF6), size: 18),
                     ),
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item['label'], style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        Text(item['valor']?.toString().isNotEmpty == true ? item['valor'] : '-',
+                        Text(item['label'],
+                            style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                        Text(
+                            item['valor']?.toString().isNotEmpty == true
+                                ? item['valor']
+                                : '-',
                             style: const TextStyle(fontWeight: FontWeight.w600)),
                       ],
                     ),
@@ -580,29 +515,5 @@ class PerfilInfoCard extends StatelessWidget {
         }).toList(),
       ),
     );
-  }
-}
-
-// ─── Función helper incidencia ────────────────────────────────
-Future<void> crearIncidencia(BuildContext context, String uid, String equipo, String tipo, String mensaje) async {
-  try {
-    await FirebaseFirestore.instance.collection('incidencias').add({
-      'usuarioId': uid,
-      'tipo': tipo,
-      'mensaje': mensaje,
-      'equipo': equipo,
-      'fecha': DateTime.now().toIso8601String(),
-      'leida': false,
-    });
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Text('Incidencia enviada'),
-      backgroundColor: Colors.green,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
-  } catch (e) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
   }
 }

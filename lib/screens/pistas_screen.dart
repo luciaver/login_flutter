@@ -19,8 +19,8 @@ class PistasScreen extends StatefulWidget {
 }
 
 class _PistasScreenState extends State<PistasScreen> {
-  static const Color rosa   = Color(0xFFEC4899);
-  static const Color rosaDark = Color(0xFFDB2777);
+  static const Color rosa     = Color(0xFF8B5CF6);
+  static const Color rosaDark = Color(0xFF8B5CF6);
 
   String _filtro = 'Todas';
   static const _deportes = ['Todas', 'Fútbol', 'Baloncesto', 'Pádel', 'Tenis'];
@@ -36,7 +36,7 @@ class _PistasScreenState extends State<PistasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF0F6),
+      backgroundColor: const Color(0xFFF3EEFF),
       appBar: widget.mostrarAppBar
           ? AppBar(
         title: const Text('Nuestras Pistas'),
@@ -56,8 +56,6 @@ class _PistasScreenState extends State<PistasScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(children: [
-                const Icon(Icons.sports, color: Colors.white, size: 22),
-                const SizedBox(width: 10),
                 const Text('Pistas Disponibles',
                     style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
               ]),
@@ -66,7 +64,7 @@ class _PistasScreenState extends State<PistasScreen> {
         ),
       ),
       body: Column(children: [
-        // Filtro por deporte
+        // Filtrar por deporte
         Container(
           color: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
@@ -106,8 +104,6 @@ class _PistasScreenState extends State<PistasScreen> {
               if (!snap.hasData || snap.data!.docs.isEmpty) {
                 return Center(
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.sports, size: 64, color: Colors.grey.shade300),
-                    const SizedBox(height: 12),
                     Text('No hay pistas disponibles',
                         style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
                     const SizedBox(height: 6),
@@ -153,11 +149,11 @@ class _PistaCard extends StatelessWidget {
 
   Color get _colorTipo {
     switch (tipo) {
-      case 'Tenis':      return const Color(0xFFEC4899);
-      case 'Fútbol':     return const Color(0xFFDB2777);
-      case 'Pádel':      return const Color(0xFFF472B6);
-      case 'Baloncesto': return const Color(0xFFBE185D);
-      default:           return const Color(0xFFEC4899);
+      case 'Tenis':      return const Color(0xFF8B5CF6);
+      case 'Fútbol':     return const Color(0xFF8B5CF6);
+      case 'Pádel':      return const Color(0xFFBEA6FF);
+      case 'Baloncesto': return const Color(0xFF6D28D9);
+      default:           return const Color(0xFF8B5CF6);
     }
   }
 
@@ -165,9 +161,9 @@ class _PistaCard extends StatelessWidget {
     switch (tipo) {
       case 'Tenis':      return Icons.sports_tennis;
       case 'Fútbol':     return Icons.sports_soccer;
-      case 'Pádel':      return Icons.sports;
+      case 'Pádel':      return Icons.sports_tennis;
       case 'Baloncesto': return Icons.sports_basketball;
-      default:           return Icons.sports;
+      default:           return Icons.sports_tennis;
     }
   }
 
@@ -183,7 +179,7 @@ class _PistaCard extends StatelessWidget {
         ],
       ),
       child: Column(children: [
-        // Cabecera con gradiente rosa
+        // Cabecera con gradiente
         Container(
           width: double.infinity,
           height: 120,
@@ -204,16 +200,16 @@ class _PistaCard extends StatelessWidget {
                   color: Colors.white.withOpacity(0.25),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.check_circle, color: Colors.white, size: 14),
-                  const SizedBox(width: 4),
-                  const Text('Disponible', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.check_circle, color: Colors.white, size: 14),
+                  SizedBox(width: 4),
+                  Text('Disponible',
+                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                 ]),
               ),
             ),
           ]),
         ),
-        // Info y botón
         Padding(
           padding: const EdgeInsets.all(14),
           child: Row(children: [
@@ -222,7 +218,7 @@ class _PistaCard extends StatelessWidget {
                 Text(nombre, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Row(children: [
-                  Icon(Icons.sports, size: 14, color: _colorTipo),
+                  Icon(Icons.sports_tennis, size: 14, color: _colorTipo),
                   const SizedBox(width: 4),
                   Text(tipo, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                   const SizedBox(width: 12),

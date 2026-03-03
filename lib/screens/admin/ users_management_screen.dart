@@ -14,7 +14,7 @@ class UsersManagementScreen extends StatelessWidget {
 
 class _Body extends StatelessWidget {
   const _Body();
-  static const Color ac = Color(0xFFEC4899);
+  static const Color ac = Color(0xFF8B5CF6);
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class _Body extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gestión de Usuarios'),
-        backgroundColor: const Color(0xFFDB2777),
+        backgroundColor: const Color(0xFF8B5CF6),
         foregroundColor: Colors.white,
       ),
       body: Column(children: [
@@ -101,21 +101,14 @@ class _Body extends StatelessWidget {
                         '$email\n${rol.toUpperCase()}',
                         style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                       ),
-                      // ── Botones separados con espacio entre ellos ──
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _iconBtn(
-                            Icons.edit,
-                            ac,
-                                () => _editar(context, doc.id, nombre, email, rol, fecha, telefono, posicion, equipo),
-                          ),
+                          _iconBtn(Icons.edit, ac,
+                                  () => _editar(context, doc.id, nombre, email, rol, fecha, telefono, posicion, equipo)),
                           const SizedBox(width: 6),
-                          _iconBtn(
-                            Icons.delete,
-                            Colors.red,
-                                () => _eliminar(context, doc.id, nombre),
-                          ),
+                          _iconBtn(Icons.delete, Colors.red,
+                                  () => _eliminar(context, doc.id, nombre)),
                         ],
                       ),
                       children: [
@@ -126,8 +119,7 @@ class _Body extends StatelessWidget {
                             _fila(Icons.cake, 'F. Nacimiento', _fmt(fecha), _color(rol)),
                             _fila(Icons.phone, 'Teléfono', telefono.isNotEmpty ? telefono : '-', _color(rol)),
                             if (posicion != null) _fila(Icons.sports_soccer, 'Posición', posicion, _color(rol)),
-                            if (rol != 'jugador' && equipo != null)
-                              _fila(Icons.groups, 'Equipo', equipo, _color(rol)),
+                            if (equipo != null) _fila(Icons.groups, 'Equipo', equipo, _color(rol)),
                           ]),
                         ),
                       ],
@@ -148,7 +140,6 @@ class _Body extends StatelessWidget {
     );
   }
 
-  // ── helpers ────────────────────────────────────────────────
 
   String _fmt(String v) {
     if (v.isEmpty) return '-';
@@ -160,10 +151,10 @@ class _Body extends StatelessWidget {
 
   Color _color(String rol) {
     switch (rol) {
-      case 'jugador':    return const Color(0xFFEC4899);
-      case 'entrenador': return const Color(0xFFF472B6);
-      case 'arbitro':    return const Color(0xFFDB2777);
-      case 'admin':      return const Color(0xFF9D174D);
+      case 'jugador':    return const Color(0xFF8B5CF6);
+      case 'entrenador': return const Color(0xFFBEA6FF);
+      case 'arbitro':    return const Color(0xFF8B5CF6);
+      case 'admin':      return const Color(0xFF6D28D9);
       default:           return Colors.grey;
     }
   }
@@ -180,10 +171,7 @@ class _Body extends StatelessWidget {
 
   Widget _iconBtn(IconData icon, Color c, VoidCallback tap) => Container(
     margin: const EdgeInsets.symmetric(vertical: 4),
-    decoration: BoxDecoration(
-      color: c.withOpacity(0.1),
-      borderRadius: BorderRadius.circular(8),
-    ),
+    decoration: BoxDecoration(color: c.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
     child: IconButton(
       icon: Icon(icon, color: c, size: 20),
       onPressed: tap,
@@ -202,7 +190,6 @@ class _Body extends StatelessWidget {
     ]),
   );
 
-  // ── DatePicker ─────────────────────────────────────────────
 
   Future<String?> _pickDate(BuildContext context, String? actual) async {
     DateTime init = DateTime(2000);
@@ -215,7 +202,7 @@ class _Body extends StatelessWidget {
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
-              primary: Color(0xFFEC4899), onPrimary: Colors.white, onSurface: Colors.black87),
+              primary: Color(0xFF8B5CF6), onPrimary: Colors.white, onSurface: Colors.black87),
         ),
         child: child!,
       ),
@@ -239,7 +226,7 @@ class _Body extends StatelessWidget {
   );
 
   Widget _campo(TextEditingController ctrl, String label, IconData icon,
-      {TextInputType type = TextInputType.text, bool obscure = false, Color ac = const Color(0xFFEC4899)}) {
+      {TextInputType type = TextInputType.text, bool obscure = false, Color ac = const Color(0xFF8B5CF6)}) {
     return TextField(
       controller: ctrl, keyboardType: type, obscureText: obscure,
       decoration: InputDecoration(
@@ -254,7 +241,7 @@ class _Body extends StatelessWidget {
   }
 
   Widget _drop<T>({required T? value, required List<DropdownMenuItem<T>> items,
-    required ValueChanged<T?> onChanged, Color ac = const Color(0xFFEC4899)}) {
+    required ValueChanged<T?> onChanged, Color ac = const Color(0xFF8B5CF6)}) {
     return Container(
       decoration: BoxDecoration(border: Border.all(color: ac), borderRadius: BorderRadius.circular(12)),
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -268,6 +255,58 @@ class _Body extends StatelessWidget {
     );
   }
 
+  //Seleccioanr el equipo
+
+  Widget _selectorEquipo({
+    required String? equipoIdSeleccionado,
+    required ValueChanged<String?> onChanged,
+    Color ac = const Color(0xFF8B5CF6),
+  }) {
+    return FutureBuilder<QuerySnapshot>(
+      future: FirebaseFirestore.instance.collection('equipos').get(),
+      builder: (_, snap) {
+        if (!snap.hasData) {
+          return Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border.all(color: ac),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const LinearProgressIndicator(),
+          );
+        }
+        final equipos = snap.data!.docs;
+        return Container(
+          decoration: BoxDecoration(border: Border.all(color: ac), borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: equipoIdSeleccionado,
+              isExpanded: true,
+              hint: Row(children: [
+                Icon(Icons.groups, color: ac, size: 18),
+                const SizedBox(width: 8),
+                const Text('Equipo (opcional)'),
+              ]),
+              icon: Icon(Icons.arrow_drop_down, color: ac),
+              items: [
+                const DropdownMenuItem<String>(value: null, child: Text('Sin equipo')),
+                ...equipos.map((doc) {
+                  final d = doc.data() as Map<String, dynamic>;
+                  return DropdownMenuItem<String>(
+                    value: doc.id,
+                    child: Text(d['nombre'] ?? doc.id),
+                  );
+                }),
+              ],
+              onChanged: onChanged,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _snack(BuildContext ctx, String m, Color c) {
     ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
       content: Text(m), backgroundColor: c,
@@ -276,13 +315,15 @@ class _Body extends StatelessWidget {
     ));
   }
 
-  // ── AGREGAR ───────────────────────────────────────────────
+  // Añadir
 
   void _agregar(BuildContext context) {
     final nc = TextEditingController(), ec = TextEditingController(),
-        pc = TextEditingController(), tc = TextEditingController(), eqc = TextEditingController();
+        pc = TextEditingController(), tc = TextEditingController();
     String rol = 'jugador', pos = 'Portero';
-    String? fecha; String fechaDisp = 'Seleccionar fecha';
+    String? fecha;
+    String fechaDisp = 'Seleccionar fecha';
+    String? equipoIdSeleccionado;
 
     showDialog(context: context, builder: (dCtx) => StatefulBuilder(
       builder: (ctx, ss) => AlertDialog(
@@ -298,7 +339,7 @@ class _Body extends StatelessWidget {
               final f = await _pickDate(ctx, fecha);
               if (f != null) ss(() { fecha = f; fechaDisp = _fmt(f); });
             },
-            child: _fechaBtn(fechaDisp, fecha != null, const Color(0xFFEC4899)),
+            child: _fechaBtn(fechaDisp, fecha != null, const Color(0xFF8B5CF6)),
           ),
           const SizedBox(height: 10),
           _drop<String>(
@@ -309,8 +350,9 @@ class _Body extends StatelessWidget {
               DropdownMenuItem(value: 'arbitro',    child: Text('Árbitro')),
               DropdownMenuItem(value: 'admin',      child: Text('Admin')),
             ],
-            onChanged: (v) => ss(() => rol = v!),
+            onChanged: (v) => ss(() { rol = v!; equipoIdSeleccionado = null; }),
           ),
+          // Posición solo para jugadores
           if (rol == 'jugador') ...[
             const SizedBox(height: 10),
             _drop<String>(
@@ -324,9 +366,13 @@ class _Body extends StatelessWidget {
               onChanged: (v) => ss(() => pos = v!),
             ),
           ],
-          if (rol != 'jugador') ...[
+          // Seleccioanr equipo para jugadores y entrenadores
+          if (rol == 'jugador' || rol == 'entrenador') ...[
             const SizedBox(height: 10),
-            _campo(eqc, 'Equipo (opcional)', Icons.groups),
+            _selectorEquipo(
+              equipoIdSeleccionado: equipoIdSeleccionado,
+              onChanged: (v) => ss(() => equipoIdSeleccionado = v),
+            ),
           ],
         ])),
         actions: [
@@ -336,7 +382,7 @@ class _Body extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEC4899), foregroundColor: Colors.white,
+              backgroundColor: const Color(0xFF8B5CF6), foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () async {
@@ -346,11 +392,11 @@ class _Body extends StatelessWidget {
                 nombre: nc.text.trim(), email: ec.text.trim(), password: pc.text, rol: rol,
                 fechaNacimiento: fecha!, telefono: tc.text.trim(),
                 posicion: rol == 'jugador' ? pos : null,
-                equipo: rol != 'jugador' && eqc.text.trim().isNotEmpty ? eqc.text.trim() : null,
+                equipoId: equipoIdSeleccionado,
               );
               Navigator.pop(dCtx);
               _snack(context, ok ? 'Usuario agregado' : 'Error al agregar',
-                  ok ? const Color(0xFFEC4899) : Colors.red);
+                  ok ? const Color(0xFF8B5CF6) : Colors.red);
             },
             child: const Text('Agregar'),
           ),
@@ -359,104 +405,121 @@ class _Body extends StatelessWidget {
     ));
   }
 
-  // ── EDITAR ────────────────────────────────────────────────
+  //EDITAR
 
   void _editar(BuildContext context, String uid, String nombre, String email,
       String rol, String fecha, String telefono, String? posicion, String? equipo) {
     final nc = TextEditingController(text: nombre);
     final tc = TextEditingController(text: telefono);
-    final eqc = TextEditingController(text: equipo ?? '');
     String sRol = rol, sPos = posicion ?? 'Portero';
     String? sFecha = fecha.isNotEmpty ? fecha : null;
     String fechaDisp = sFecha != null ? _fmt(sFecha) : 'Seleccionar fecha';
-    const ac2 = Color(0xFFDB2777);
+    String? equipoIdSeleccionado;
+    const ac2 = Color(0xFF8B5CF6);
 
-    showDialog(context: context, builder: (dCtx) => StatefulBuilder(
-      builder: (ctx, ss) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Editar Usuario'),
-        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-          _campo(nc, 'Nombre', Icons.person, ac: ac2),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
-            child: Row(children: [
-              const Icon(Icons.email, color: ac2),
-              const SizedBox(width: 10),
-              Text(email, style: const TextStyle(fontWeight: FontWeight.w500)),
-            ]),
-          ),
-          const SizedBox(height: 10),
-          _campo(tc, 'Teléfono', Icons.phone, type: TextInputType.phone, ac: ac2),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () async {
-              final f = await _pickDate(ctx, sFecha);
-              if (f != null) ss(() { sFecha = f; fechaDisp = _fmt(f); });
-            },
-            child: _fechaBtn(fechaDisp, sFecha != null, ac2),
-          ),
-          const SizedBox(height: 10),
-          _drop<String>(
-            value: sRol, ac: ac2,
-            items: const [
-              DropdownMenuItem(value: 'jugador',    child: Text('Jugador')),
-              DropdownMenuItem(value: 'entrenador', child: Text('Entrenador')),
-              DropdownMenuItem(value: 'arbitro',    child: Text('Árbitro')),
-              DropdownMenuItem(value: 'admin',      child: Text('Admin')),
-            ],
-            onChanged: (v) => ss(() => sRol = v!),
-          ),
-          if (sRol == 'jugador') ...[
-            const SizedBox(height: 10),
-            _drop<String>(
-              value: sPos, ac: ac2,
-              items: const [
-                DropdownMenuItem(value: 'Portero',        child: Text('Portero')),
-                DropdownMenuItem(value: 'Defensa',        child: Text('Defensa')),
-                DropdownMenuItem(value: 'Centrocampista', child: Text('Centrocampista')),
-                DropdownMenuItem(value: 'Delantero',      child: Text('Delantero')),
+    Future<String?> _buscarEquipoId() async {
+      if (equipo == null || equipo.isEmpty) return null;
+      return equipo;
+    }
+
+    showDialog(context: context, builder: (dCtx) => FutureBuilder<String?>(
+      future: _buscarEquipoId(),
+      builder: (_, snapEquipo) {
+        equipoIdSeleccionado ??= snapEquipo.data;
+        return StatefulBuilder(
+          builder: (ctx, ss) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Editar Usuario'),
+            content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              _campo(nc, 'Nombre', Icons.person, ac: ac2),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
+                child: Row(children: [
+                  const Icon(Icons.email, color: ac2),
+                  const SizedBox(width: 10),
+                  Text(email, style: const TextStyle(fontWeight: FontWeight.w500)),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              _campo(tc, 'Teléfono', Icons.phone, type: TextInputType.phone, ac: ac2),
+              const SizedBox(height: 10),
+              GestureDetector(
+                onTap: () async {
+                  final f = await _pickDate(ctx, sFecha);
+                  if (f != null) ss(() { sFecha = f; fechaDisp = _fmt(f); });
+                },
+                child: _fechaBtn(fechaDisp, sFecha != null, ac2),
+              ),
+              const SizedBox(height: 10),
+              _drop<String>(
+                value: sRol, ac: ac2,
+                items: const [
+                  DropdownMenuItem(value: 'jugador',    child: Text('Jugador')),
+                  DropdownMenuItem(value: 'entrenador', child: Text('Entrenador')),
+                  DropdownMenuItem(value: 'arbitro',    child: Text('Árbitro')),
+                  DropdownMenuItem(value: 'admin',      child: Text('Admin')),
+                ],
+                onChanged: (v) => ss(() { sRol = v!; equipoIdSeleccionado = null; }),
+              ),
+              // Posición solo para jugadores
+              if (sRol == 'jugador') ...[
+                const SizedBox(height: 10),
+                _drop<String>(
+                  value: sPos, ac: ac2,
+                  items: const [
+                    DropdownMenuItem(value: 'Portero',        child: Text('Portero')),
+                    DropdownMenuItem(value: 'Defensa',        child: Text('Defensa')),
+                    DropdownMenuItem(value: 'Centrocampista', child: Text('Centrocampista')),
+                    DropdownMenuItem(value: 'Delantero',      child: Text('Delantero')),
+                  ],
+                  onChanged: (v) => ss(() => sPos = v!),
+                ),
               ],
-              onChanged: (v) => ss(() => sPos = v!),
-            ),
-          ],
-          if (sRol != 'jugador') ...[
-            const SizedBox(height: 10),
-            _campo(eqc, 'Equipo (opcional)', Icons.groups, ac: ac2),
-          ],
-        ])),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dCtx),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+              // Selector de equipo para jugadores y entrenadores
+              if (sRol == 'jugador' || sRol == 'entrenador') ...[
+                const SizedBox(height: 10),
+                _selectorEquipo(
+                  equipoIdSeleccionado: equipoIdSeleccionado,
+                  onChanged: (v) => ss(() => equipoIdSeleccionado = v),
+                  ac: ac2,
+                ),
+              ],
+            ])),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dCtx),
+                child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ac2, foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: () async {
+                  if (sFecha == null) { _snack(ctx, 'Selecciona fecha de nacimiento', Colors.orange); return; }
+                  final prov = Provider.of<UserProvider>(ctx, listen: false);
+                  final ok = await prov.editarUsuario(
+                    userId: uid, nombre: nc.text.trim(), rol: sRol,
+                    fechaNacimiento: sFecha!, telefono: tc.text.trim(),
+                    posicion: sRol == 'jugador' ? sPos : null,
+                    equipoId: (sRol == 'jugador' || sRol == 'entrenador') ? equipoIdSeleccionado : null,
+                  );
+                  Navigator.pop(dCtx);
+                  _snack(context, ok ? 'Actualizado correctamente' : 'Error al actualizar',
+                      ok ? ac2 : Colors.red);
+                },
+                child: const Text('Guardar'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ac2, foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () async {
-              if (sFecha == null) { _snack(ctx, 'Selecciona fecha de nacimiento', Colors.orange); return; }
-              final prov = Provider.of<UserProvider>(ctx, listen: false);
-              final ok = await prov.editarUsuario(
-                userId: uid, nombre: nc.text.trim(), rol: sRol,
-                fechaNacimiento: sFecha!, telefono: tc.text.trim(),
-                posicion: sRol == 'jugador' ? sPos : null,
-                equipo: sRol != 'jugador' && eqc.text.trim().isNotEmpty ? eqc.text.trim() : null,
-              );
-              Navigator.pop(dCtx);
-              _snack(context, ok ? 'Actualizado correctamente' : 'Error al actualizar',
-                  ok ? ac2 : Colors.red);
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
+        );
+      },
     ));
   }
 
-  // ── ELIMINAR ─────────────────────────────────────────────
+  //eliminar
 
   void _eliminar(BuildContext context, String uid, String nombre) {
     showDialog(context: context, builder: (dCtx) => AlertDialog(
@@ -478,7 +541,7 @@ class _Body extends StatelessWidget {
             final ok = await prov.eliminarUsuario(uid);
             Navigator.pop(dCtx);
             _snack(context, ok ? 'Usuario eliminado' : 'Error',
-                ok ? const Color(0xFFEC4899) : Colors.red);
+                ok ? const Color(0xFF8B5CF6) : Colors.red);
           },
           child: const Text('Eliminar'),
         ),

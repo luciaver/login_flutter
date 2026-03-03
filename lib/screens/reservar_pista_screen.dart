@@ -18,7 +18,7 @@ class ReservarPistaScreen extends StatefulWidget {
 }
 
 class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
-  static const Color morado = Color(0xFF6B4CE6);
+  static const Color morado = Color(0xFF8B5CF6);
 
   DateTime? _fecha;
   String? _horaInicio, _horaFin;
@@ -30,12 +30,9 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
     '20:00','21:00'
   ];
 
-  // 🔹 Convierte "HH:mm" a minutos totales
   int _horaToMin(String hora) {
     final parts = hora.split(':');
-    final h = int.parse(parts[0]);
-    final m = int.parse(parts[1]);
-    return h * 60 + m;
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
   }
 
   Future<void> _reservar() async {
@@ -44,7 +41,6 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
       return;
     }
 
-    // Validación correcta de horas
     if (_horaToMin(_horaInicio!) >= _horaToMin(_horaFin!)) {
       _msg('La hora de fin debe ser posterior al inicio', Colors.orange);
       return;
@@ -60,24 +56,24 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
         return;
       }
 
-      final uid = user.uid;
       final fechaStr = _fecha!.toIso8601String().substring(0, 10);
 
-      // 🔹 Comprobar disponibilidad
-      final ocupadas = await FirebaseFirestore.instance
+      final snapshot = await FirebaseFirestore.instance
           .collection('reservas')
           .where('pistaId', isEqualTo: widget.pistaId)
           .where('fecha', isEqualTo: fechaStr)
-          .where('estado', isNotEqualTo: 'cancelada')
           .get();
 
-      final conflicto = ocupadas.docs.any((doc) {
+      final ocupadas = snapshot.docs.where((doc) {
+        final d = doc.data();
+        return (d['estado'] ?? '') != 'cancelada';
+      }).toList();
+
+      final conflicto = ocupadas.any((doc) {
         final d = doc.data();
         final ini = d['horaInicio'] as String? ?? '';
         final fin = d['horaFin'] as String? ?? '';
-
         if (ini.isEmpty || fin.isEmpty) return false;
-
         return _horaToMin(_horaInicio!) < _horaToMin(fin) &&
             _horaToMin(_horaFin!) > _horaToMin(ini);
       });
@@ -91,7 +87,7 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
       await FirebaseFirestore.instance.collection('reservas').add({
         'pistaId': widget.pistaId,
         'pistaNombre': widget.pistaNombre,
-        'usuarioId': uid,
+        'usuarioId': user.uid,
         'fecha': fechaStr,
         'horaInicio': _horaInicio,
         'horaFin': _horaFin,
@@ -100,12 +96,11 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
       });
 
       _msg('¡Reserva realizada!', Colors.green);
-
       await Future.delayed(const Duration(milliseconds: 800));
       if (mounted) Navigator.pop(context);
 
     } catch (e) {
-      _msg('Error al reservar', Colors.red);
+      _msg('Error al reservar: $e', Colors.red);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -113,18 +108,14 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
 
   void _msg(String m, Color c) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(m),
-        backgroundColor: c,
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(m), backgroundColor: c, behavior: SnackBarBehavior.floating),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0FF),
+      backgroundColor: const Color(0xFFF3EEFF),
       appBar: AppBar(
         title: Text('Reservar ${widget.pistaNombre}'),
         backgroundColor: morado,
@@ -136,35 +127,26 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
-            // 🔹 Info pista
+            // Info pista
             Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               elevation: 3,
               child: ListTile(
                 leading: CircleAvatar(
                   backgroundColor: morado.withOpacity(0.15),
                   child: const Icon(Icons.sports, color: morado),
                 ),
-                title: Text(
-                  widget.pistaNombre,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
+                title: Text(widget.pistaNombre,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text('${widget.tipo} · €${widget.precio}/h'),
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // 🔹 Fecha
-            const Text(
-              'Fecha',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: morado,
-              ),
-            ),
+            // Fecha
+            const Text('Fecha',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: morado)),
             const SizedBox(height: 8),
 
             GestureDetector(
@@ -173,14 +155,11 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
                   context: context,
                   initialDate: DateTime.now(),
                   firstDate: DateTime.now(),
-                  lastDate:
-                  DateTime.now().add(const Duration(days: 60)),
+                  lastDate: DateTime.now().add(const Duration(days: 60)),
                   builder: (ctx, child) => Theme(
                     data: Theme.of(ctx).copyWith(
                       colorScheme: const ColorScheme.light(
-                        primary: morado,
-                        onPrimary: Colors.white,
-                      ),
+                          primary: morado, onPrimary: Colors.white),
                     ),
                     child: child!,
                   ),
@@ -191,25 +170,19 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  border: Border.all(
-                      color: _fecha != null
-                          ? morado
-                          : Colors.grey.shade300),
+                  border: Border.all(color: _fecha != null ? morado : Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_today,
-                        color: morado),
+                    const Icon(Icons.calendar_today, color: morado),
                     const SizedBox(width: 12),
                     Text(
                       _fecha != null
-                          ? '${_fecha!.day.toString().padLeft(2,'0')}/${_fecha!.month.toString().padLeft(2,'0')}/${_fecha!.year}'
+                          ? '${_fecha!.day.toString().padLeft(2, '0')}/${_fecha!.month.toString().padLeft(2, '0')}/${_fecha!.year}'
                           : 'Seleccionar fecha',
                       style: TextStyle(
-                        color: _fecha != null
-                            ? Colors.black87
-                            : Colors.grey.shade500,
+                        color: _fecha != null ? Colors.black87 : Colors.grey.shade500,
                         fontSize: 15,
                       ),
                     ),
@@ -220,41 +193,25 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
 
             const SizedBox(height: 20),
 
-            // 🔹 Hora inicio
-            const Text(
-              'Hora inicio',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: morado),
-            ),
+            // Hora inicio
+            const Text('Hora inicio',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: morado)),
             const SizedBox(height: 8),
-            _dropHora(
-              _horaInicio,
-              'Seleccionar hora de inicio',
-                  (v) => setState(() => _horaInicio = v),
-            ),
+            _dropHora(_horaInicio, 'Seleccionar hora de inicio',
+                    (v) => setState(() => _horaInicio = v)),
 
             const SizedBox(height: 14),
 
-            // 🔹 Hora fin
-            const Text(
-              'Hora fin',
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: morado),
-            ),
+            // Hora fin
+            const Text('Hora fin',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: morado)),
             const SizedBox(height: 8),
-            _dropHora(
-              _horaFin,
-              'Seleccionar hora de fin',
-                  (v) => setState(() => _horaFin = v),
-            ),
+            _dropHora(_horaFin, 'Seleccionar hora de fin',
+                    (v) => setState(() => _horaFin = v)),
 
             const SizedBox(height: 30),
 
-            // 🔹 Botón reservar
+            // Botón reservar
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -263,20 +220,12 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: morado,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 child: _loading
-                    ? const CircularProgressIndicator(
-                    color: Colors.white)
-                    : const Text(
-                  'Confirmar Reserva',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Confirmar Reserva',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -285,17 +234,11 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
     );
   }
 
-  Widget _dropHora(
-      String? value,
-      String hint,
-      ValueChanged<String?> onChanged) {
+  Widget _dropHora(String? value, String hint, ValueChanged<String?> onChanged) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(
-            color: value != null
-                ? morado
-                : Colors.grey.shade300),
+        border: Border.all(color: value != null ? morado : Colors.grey.shade300),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -304,12 +247,8 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
           value: value,
           hint: Text(hint),
           isExpanded: true,
-          icon: const Icon(Icons.access_time,
-              color: morado),
-          items: _horas
-              .map((h) =>
-              DropdownMenuItem(value: h, child: Text(h)))
-              .toList(),
+          icon: const Icon(Icons.access_time, color: morado),
+          items: _horas.map((h) => DropdownMenuItem(value: h, child: Text(h))).toList(),
           onChanged: onChanged,
         ),
       ),

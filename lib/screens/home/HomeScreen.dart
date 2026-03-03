@@ -10,13 +10,7 @@ class HomeScreen extends StatefulWidget {
   final String rol;
   final String nombre;
   final String uid;
-
-  const HomeScreen({
-    super.key,
-    required this.rol,
-    required this.nombre,
-    required this.uid,
-  });
+  const HomeScreen({super.key, required this.rol, required this.nombre, required this.uid});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -24,8 +18,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _pagina = 0;
-
-  static const Color rosa = Color(0xFFEC4899);
+  static const Color lila = Color(0xFF8B5CF6);
 
   List<Widget> get _paginas {
     if (widget.rol == 'arbitro') {
@@ -66,17 +59,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final paginas = _paginas;
-    final items = _items;
-
+    final items   = _items;
     if (_pagina >= paginas.length) _pagina = 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF0F6),
+      backgroundColor: const Color(0xFFF3EEFF),
       body: IndexedStack(index: _pagina, children: paginas),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _pagina,
         onTap: (i) => setState(() => _pagina = i),
-        selectedItemColor: rosa,
+        selectedItemColor: lila,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
