@@ -19,16 +19,16 @@ class PistasScreen extends StatefulWidget {
 }
 
 class _PistasScreenState extends State<PistasScreen> {
-  static const Color rosa     = Color(0xFF8B5CF6);
-  static const Color rosaDark = Color(0xFF8B5CF6);
+  static const Color ac     = Color(0xFFF0ABFC);
+  static const Color acDark = Color(0xFFD946EF);
+  static const Color fondo  = Color(0xFFFAF0FF);
 
   String _filtro = 'Todas';
   static const _deportes = ['Todas', 'Fútbol', 'Baloncesto', 'Pádel', 'Tenis'];
 
   Stream<QuerySnapshot> get _stream {
     final base = FirebaseFirestore.instance
-        .collection('pistas')
-        .where('disponible', isEqualTo: true);
+        .collection('pistas').where('disponible', isEqualTo: true);
     if (_filtro == 'Todas') return base.snapshots();
     return base.where('tipo', isEqualTo: _filtro).snapshots();
   }
@@ -36,11 +36,11 @@ class _PistasScreenState extends State<PistasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3EEFF),
+      backgroundColor: fondo,
       appBar: widget.mostrarAppBar
           ? AppBar(
         title: const Text('Nuestras Pistas'),
-        backgroundColor: rosaDark,
+        backgroundColor: acDark,
         foregroundColor: Colors.white,
       )
           : PreferredSize(
@@ -48,7 +48,7 @@ class _PistasScreenState extends State<PistasScreen> {
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [rosaDark, rosa],
+              colors: [Color(0xFFD946EF), Color(0xFFF0ABFC)],
               begin: Alignment.topLeft, end: Alignment.bottomRight,
             ),
           ),
@@ -78,14 +78,14 @@ class _PistasScreenState extends State<PistasScreen> {
                   child: FilterChip(
                     label: Text(d),
                     selected: sel,
-                    selectedColor: rosa,
+                    selectedColor: acDark,
                     backgroundColor: Colors.grey.shade100,
                     checkmarkColor: Colors.white,
                     labelStyle: TextStyle(
                       color: sel ? Colors.white : Colors.black87,
                       fontWeight: sel ? FontWeight.bold : FontWeight.normal,
                     ),
-                    side: BorderSide(color: sel ? rosa : Colors.grey.shade300),
+                    side: BorderSide(color: sel ? acDark : Colors.grey.shade300),
                     onSelected: (_) => setState(() => _filtro = d),
                   ),
                 );
@@ -99,7 +99,7 @@ class _PistasScreenState extends State<PistasScreen> {
             stream: _stream,
             builder: (_, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: rosa));
+                return const Center(child: CircularProgressIndicator(color: acDark));
               }
               if (!snap.hasData || snap.data!.docs.isEmpty) {
                 return Center(
@@ -140,22 +140,12 @@ class _PistaCard extends StatelessWidget {
   final String? uid;
 
   const _PistaCard({
-    required this.pistaId,
-    required this.nombre,
-    required this.tipo,
-    required this.precio,
-    this.uid,
+    required this.pistaId, required this.nombre,
+    required this.tipo, required this.precio, this.uid,
   });
 
-  Color get _colorTipo {
-    switch (tipo) {
-      case 'Tenis':      return const Color(0xFF8B5CF6);
-      case 'Fútbol':     return const Color(0xFF8B5CF6);
-      case 'Pádel':      return const Color(0xFFBEA6FF);
-      case 'Baloncesto': return const Color(0xFF6D28D9);
-      default:           return const Color(0xFF8B5CF6);
-    }
-  }
+  static const Color acDark = Color(0xFFD946EF);
+  static const Color ac     = Color(0xFFF0ABFC);
 
   IconData get _icono {
     switch (tipo) {
@@ -172,21 +162,17 @@ class _PistaCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: _colorTipo.withOpacity(0.15), blurRadius: 16, offset: const Offset(0, 6)),
-        ],
+        color: Colors.white, borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: acDark.withOpacity(0.15), blurRadius: 16, offset: const Offset(0, 6))],
       ),
       child: Column(children: [
         // Cabecera con gradiente
         Container(
-          width: double.infinity,
-          height: 120,
+          width: double.infinity, height: 120,
           decoration: BoxDecoration(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             gradient: LinearGradient(
-              colors: [_colorTipo.withOpacity(0.7), _colorTipo],
+              colors: [acDark.withOpacity(0.7), acDark],
               begin: Alignment.topLeft, end: Alignment.bottomRight,
             ),
           ),
@@ -197,9 +183,7 @@ class _PistaCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    color: Colors.white.withOpacity(0.25), borderRadius: BorderRadius.circular(12)),
                 child: const Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.check_circle, color: Colors.white, size: 14),
                   SizedBox(width: 4),
@@ -218,33 +202,26 @@ class _PistaCard extends StatelessWidget {
                 Text(nombre, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Row(children: [
-                  Icon(Icons.sports_tennis, size: 14, color: _colorTipo),
+                  Icon(Icons.sports_tennis, size: 14, color: acDark),
                   const SizedBox(width: 4),
                   Text(tipo, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                   const SizedBox(width: 12),
-                  Icon(Icons.euro, size: 14, color: _colorTipo),
+                  Icon(Icons.euro, size: 14, color: acDark),
                   Text('$precio / hora',
-                      style: TextStyle(fontSize: 13, color: _colorTipo, fontWeight: FontWeight.w600)),
+                      style: TextStyle(fontSize: 13, color: acDark, fontWeight: FontWeight.w600)),
                 ]),
               ]),
             ),
             ElevatedButton.icon(
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => ReservarPistaScreen(
-                    pistaId: pistaId,
-                    pistaNombre: nombre,
-                    tipo: tipo,
-                    precio: precio,
-                  ),
-                ),
+                MaterialPageRoute(builder: (_) => ReservarPistaScreen(
+                    pistaId: pistaId, pistaNombre: nombre, tipo: tipo, precio: precio)),
               ),
               icon: const Icon(Icons.add_circle_outline, size: 16),
               label: const Text('Reservar', style: TextStyle(fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: _colorTipo,
-                foregroundColor: Colors.white,
+                backgroundColor: acDark, foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),

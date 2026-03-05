@@ -10,10 +10,10 @@ import 'partidos_screen.dart';
 class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
 
-  static const Color fondoApp   = Color(0xFFF3EEFF); // lila muy suave
-  static const Color appBarColor = Color(0xFF8B5CF6); // lila oscuro
-  static const Color cardColor  = Color(0xFFF8BBD9); // rosa claro pastel
-  static const Color iconCircle = Color(0xFFFFFFFF);
+  static const Color fondoApp    = Color(0xFFF4F4F4);
+  static const Color appBarColor = Color(0xFFAD1457);
+  static const Color cardColor   = Color(0xFFF48FB1);
+  static const Color iconCircle  = Color(0xFFFFFFFF);
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +46,7 @@ class AdminScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF4A1D96),
+              color: Color(0xFF880E4F),
             ),
           ),
           const SizedBox(height: 24),

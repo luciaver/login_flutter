@@ -91,11 +91,11 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
         'fecha': fechaStr,
         'horaInicio': _horaInicio,
         'horaFin': _horaFin,
-        'estado': 'confirmada',
+        'estado': 'pendiente', // <-- cambiado de 'confirmada' a 'pendiente'
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      _msg('¡Reserva realizada!', Colors.green);
+      _msg('¡Reserva realizada! Pendiente de confirmación.', Colors.green);
       await Future.delayed(const Duration(milliseconds: 800));
       if (mounted) Navigator.pop(context);
 

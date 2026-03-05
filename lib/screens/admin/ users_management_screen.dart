@@ -14,38 +14,41 @@ class UsersManagementScreen extends StatelessWidget {
 
 class _Body extends StatelessWidget {
   const _Body();
-  static const Color ac = Color(0xFF8B5CF6);
+  static const Color ac     = Color(0xFFF0ABFC);
+  static const Color acDark = Color(0xFFD946EF);
+  static const Color fondo  = Color(0xFFFAF0FF);
 
   @override
   Widget build(BuildContext context) {
     final prov = Provider.of<UserProvider>(context);
     return Scaffold(
+      backgroundColor: fondo,
       appBar: AppBar(
         title: const Text('Gestión de Usuarios'),
-        backgroundColor: const Color(0xFF8B5CF6),
+        backgroundColor: acDark,
         foregroundColor: Colors.white,
       ),
       body: Column(children: [
         // Filtro
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          color: ac.withOpacity(0.07),
+          color: acDark.withOpacity(0.07),
           child: Row(children: [
-            const Text('Filtrar: ', style: TextStyle(fontWeight: FontWeight.bold, color: ac)),
+            const Text('Filtrar: ', style: TextStyle(fontWeight: FontWeight.bold, color: acDark)),
             const SizedBox(width: 10),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: ac),
+                  border: Border.all(color: acDark),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: prov.filtroRol,
                     isExpanded: true,
-                    icon: const Icon(Icons.arrow_drop_down, color: ac),
+                    icon: const Icon(Icons.arrow_drop_down, color: acDark),
                     items: const [
                       DropdownMenuItem(value: 'todos',      child: Text('Todos')),
                       DropdownMenuItem(value: 'jugador',    child: Text('Jugadores')),
@@ -66,7 +69,7 @@ class _Body extends StatelessWidget {
             stream: prov.obtenerUsuarios(),
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: ac));
+                return const Center(child: CircularProgressIndicator(color: acDark));
               }
               if (!snap.hasData || snap.data!.docs.isEmpty) {
                 return const Center(child: Text('No hay usuarios'));
@@ -89,11 +92,11 @@ class _Body extends StatelessWidget {
                     elevation: 2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: _color(rol).withOpacity(0.3)),
+                      side: BorderSide(color: acDark.withOpacity(0.3)),
                     ),
                     child: ExpansionTile(
                       leading: CircleAvatar(
-                        backgroundColor: _color(rol),
+                        backgroundColor: acDark,
                         child: Icon(_icon(rol), color: Colors.white),
                       ),
                       title: Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -104,7 +107,7 @@ class _Body extends StatelessWidget {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _iconBtn(Icons.edit, ac,
+                          _iconBtn(Icons.edit, acDark,
                                   () => _editar(context, doc.id, nombre, email, rol, fecha, telefono, posicion, equipo)),
                           const SizedBox(width: 6),
                           _iconBtn(Icons.delete, Colors.red,
@@ -113,13 +116,13 @@ class _Body extends StatelessWidget {
                       ),
                       children: [
                         Container(
-                          color: _color(rol).withOpacity(0.04),
+                          color: acDark.withOpacity(0.04),
                           padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            _fila(Icons.cake, 'F. Nacimiento', _fmt(fecha), _color(rol)),
-                            _fila(Icons.phone, 'Teléfono', telefono.isNotEmpty ? telefono : '-', _color(rol)),
-                            if (posicion != null) _fila(Icons.sports_soccer, 'Posición', posicion, _color(rol)),
-                            if (equipo != null) _fila(Icons.groups, 'Equipo', equipo, _color(rol)),
+                            _fila(Icons.cake, 'F. Nacimiento', _fmt(fecha), acDark),
+                            _fila(Icons.phone, 'Teléfono', telefono.isNotEmpty ? telefono : '-', acDark),
+                            if (posicion != null) _fila(Icons.sports_soccer, 'Posición', posicion, acDark),
+                            if (equipo != null) _fila(Icons.groups, 'Equipo', equipo, acDark),
                           ]),
                         ),
                       ],
@@ -133,13 +136,12 @@ class _Body extends StatelessWidget {
       ]),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _agregar(context),
-        backgroundColor: ac,
+        backgroundColor: acDark,
         icon: const Icon(Icons.add),
         label: const Text('Nuevo'),
       ),
     );
   }
-
 
   String _fmt(String v) {
     if (v.isEmpty) return '-';
@@ -147,16 +149,6 @@ class _Body extends StatelessWidget {
       final d = DateTime.parse(v);
       return '${d.day.toString().padLeft(2,'0')}/${d.month.toString().padLeft(2,'0')}/${d.year}';
     } catch (_) { return v; }
-  }
-
-  Color _color(String rol) {
-    switch (rol) {
-      case 'jugador':    return const Color(0xFF8B5CF6);
-      case 'entrenador': return const Color(0xFFBEA6FF);
-      case 'arbitro':    return const Color(0xFF8B5CF6);
-      case 'admin':      return const Color(0xFF6D28D9);
-      default:           return Colors.grey;
-    }
   }
 
   IconData _icon(String rol) {
@@ -190,7 +182,6 @@ class _Body extends StatelessWidget {
     ]),
   );
 
-
   Future<String?> _pickDate(BuildContext context, String? actual) async {
     DateTime init = DateTime(2000);
     if (actual != null && actual.isNotEmpty) {
@@ -202,7 +193,7 @@ class _Body extends StatelessWidget {
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(
-              primary: Color(0xFF8B5CF6), onPrimary: Colors.white, onSurface: Colors.black87),
+              primary: Color(0xFFD946EF), onPrimary: Colors.white, onSurface: Colors.black87),
         ),
         child: child!,
       ),
@@ -210,57 +201,56 @@ class _Body extends StatelessWidget {
     return picked?.toIso8601String().substring(0, 10);
   }
 
-  Widget _fechaBtn(String display, bool seleccionado, Color ac) => Container(
+  Widget _fechaBtn(String display, bool seleccionado, Color c) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
     decoration: BoxDecoration(
-      border: Border.all(color: seleccionado ? ac : Colors.grey.shade400),
+      border: Border.all(color: seleccionado ? c : Colors.grey.shade400),
       borderRadius: BorderRadius.circular(12),
     ),
     child: Row(children: [
-      Icon(Icons.cake, color: ac),
+      Icon(Icons.cake, color: c),
       const SizedBox(width: 10),
       Expanded(child: Text(display,
           style: TextStyle(color: seleccionado ? Colors.black87 : Colors.grey.shade500))),
-      Icon(Icons.calendar_today, size: 16, color: ac),
+      Icon(Icons.calendar_today, size: 16, color: c),
     ]),
   );
 
   Widget _campo(TextEditingController ctrl, String label, IconData icon,
-      {TextInputType type = TextInputType.text, bool obscure = false, Color ac = const Color(0xFF8B5CF6)}) {
+      {TextInputType type = TextInputType.text, bool obscure = false,
+        Color c = const Color(0xFFD946EF)}) {
     return TextField(
       controller: ctrl, keyboardType: type, obscureText: obscure,
       decoration: InputDecoration(
-        labelText: label, prefixIcon: Icon(icon, color: ac),
+        labelText: label, prefixIcon: Icon(icon, color: c),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: ac, width: 2),
+          borderSide: BorderSide(color: c, width: 2),
         ),
       ),
     );
   }
 
   Widget _drop<T>({required T? value, required List<DropdownMenuItem<T>> items,
-    required ValueChanged<T?> onChanged, Color ac = const Color(0xFF8B5CF6)}) {
+    required ValueChanged<T?> onChanged, Color c = const Color(0xFFD946EF)}) {
     return Container(
-      decoration: BoxDecoration(border: Border.all(color: ac), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(border: Border.all(color: c), borderRadius: BorderRadius.circular(12)),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value, isExpanded: true,
-          icon: Icon(Icons.arrow_drop_down, color: ac),
+          icon: Icon(Icons.arrow_drop_down, color: c),
           items: items, onChanged: onChanged,
         ),
       ),
     );
   }
 
-  //Seleccioanr el equipo
-
   Widget _selectorEquipo({
     required String? equipoIdSeleccionado,
     required ValueChanged<String?> onChanged,
-    Color ac = const Color(0xFF8B5CF6),
+    Color c = const Color(0xFFD946EF),
   }) {
     return FutureBuilder<QuerySnapshot>(
       future: FirebaseFirestore.instance.collection('equipos').get(),
@@ -268,35 +258,28 @@ class _Body extends StatelessWidget {
         if (!snap.hasData) {
           return Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border.all(color: ac),
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(border: Border.all(color: c), borderRadius: BorderRadius.circular(12)),
             child: const LinearProgressIndicator(),
           );
         }
         final equipos = snap.data!.docs;
         return Container(
-          decoration: BoxDecoration(border: Border.all(color: ac), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(border: Border.all(color: c), borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: equipoIdSeleccionado,
-              isExpanded: true,
+              value: equipoIdSeleccionado, isExpanded: true,
               hint: Row(children: [
-                Icon(Icons.groups, color: ac, size: 18),
+                Icon(Icons.groups, color: c, size: 18),
                 const SizedBox(width: 8),
                 const Text('Equipo (opcional)'),
               ]),
-              icon: Icon(Icons.arrow_drop_down, color: ac),
+              icon: Icon(Icons.arrow_drop_down, color: c),
               items: [
                 const DropdownMenuItem<String>(value: null, child: Text('Sin equipo')),
                 ...equipos.map((doc) {
                   final d = doc.data() as Map<String, dynamic>;
-                  return DropdownMenuItem<String>(
-                    value: doc.id,
-                    child: Text(d['nombre'] ?? doc.id),
-                  );
+                  return DropdownMenuItem<String>(value: doc.id, child: Text(d['nombre'] ?? doc.id));
                 }),
               ],
               onChanged: onChanged,
@@ -315,9 +298,8 @@ class _Body extends StatelessWidget {
     ));
   }
 
-  // Añadir
-
   void _agregar(BuildContext context) {
+    const c = Color(0xFFD946EF);
     final nc = TextEditingController(), ec = TextEditingController(),
         pc = TextEditingController(), tc = TextEditingController();
     String rol = 'jugador', pos = 'Portero';
@@ -339,7 +321,7 @@ class _Body extends StatelessWidget {
               final f = await _pickDate(ctx, fecha);
               if (f != null) ss(() { fecha = f; fechaDisp = _fmt(f); });
             },
-            child: _fechaBtn(fechaDisp, fecha != null, const Color(0xFF8B5CF6)),
+            child: _fechaBtn(fechaDisp, fecha != null, c),
           ),
           const SizedBox(height: 10),
           _drop<String>(
@@ -352,7 +334,6 @@ class _Body extends StatelessWidget {
             ],
             onChanged: (v) => ss(() { rol = v!; equipoIdSeleccionado = null; }),
           ),
-          // Posición solo para jugadores
           if (rol == 'jugador') ...[
             const SizedBox(height: 10),
             _drop<String>(
@@ -366,23 +347,18 @@ class _Body extends StatelessWidget {
               onChanged: (v) => ss(() => pos = v!),
             ),
           ],
-          // Seleccioanr equipo para jugadores y entrenadores
           if (rol == 'jugador' || rol == 'entrenador') ...[
             const SizedBox(height: 10),
-            _selectorEquipo(
-              equipoIdSeleccionado: equipoIdSeleccionado,
-              onChanged: (v) => ss(() => equipoIdSeleccionado = v),
-            ),
+            _selectorEquipo(equipoIdSeleccionado: equipoIdSeleccionado,
+                onChanged: (v) => ss(() => equipoIdSeleccionado = v)),
           ],
         ])),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dCtx),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(dCtx),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF8B5CF6), foregroundColor: Colors.white,
+              backgroundColor: c, foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () async {
@@ -395,8 +371,7 @@ class _Body extends StatelessWidget {
                 equipoId: equipoIdSeleccionado,
               );
               Navigator.pop(dCtx);
-              _snack(context, ok ? 'Usuario agregado' : 'Error al agregar',
-                  ok ? const Color(0xFF8B5CF6) : Colors.red);
+              _snack(context, ok ? 'Usuario agregado' : 'Error al agregar', ok ? c : Colors.red);
             },
             child: const Text('Agregar'),
           ),
@@ -405,25 +380,23 @@ class _Body extends StatelessWidget {
     ));
   }
 
-  //EDITAR
-
   void _editar(BuildContext context, String uid, String nombre, String email,
       String rol, String fecha, String telefono, String? posicion, String? equipo) {
+    const c = Color(0xFFD946EF);
     final nc = TextEditingController(text: nombre);
     final tc = TextEditingController(text: telefono);
     String sRol = rol, sPos = posicion ?? 'Portero';
     String? sFecha = fecha.isNotEmpty ? fecha : null;
     String fechaDisp = sFecha != null ? _fmt(sFecha) : 'Seleccionar fecha';
     String? equipoIdSeleccionado;
-    const ac2 = Color(0xFF8B5CF6);
 
-    Future<String?> _buscarEquipoId() async {
+    Future<String?> buscarEquipoId() async {
       if (equipo == null || equipo.isEmpty) return null;
       return equipo;
     }
 
     showDialog(context: context, builder: (dCtx) => FutureBuilder<String?>(
-      future: _buscarEquipoId(),
+      future: buscarEquipoId(),
       builder: (_, snapEquipo) {
         equipoIdSeleccionado ??= snapEquipo.data;
         return StatefulBuilder(
@@ -431,30 +404,30 @@ class _Body extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: const Text('Editar Usuario'),
             content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              _campo(nc, 'Nombre', Icons.person, ac: ac2),
+              _campo(nc, 'Nombre', Icons.person, c: c),
               const SizedBox(height: 10),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
                 child: Row(children: [
-                  const Icon(Icons.email, color: ac2),
+                  const Icon(Icons.email, color: Color(0xFFD946EF)),
                   const SizedBox(width: 10),
                   Text(email, style: const TextStyle(fontWeight: FontWeight.w500)),
                 ]),
               ),
               const SizedBox(height: 10),
-              _campo(tc, 'Teléfono', Icons.phone, type: TextInputType.phone, ac: ac2),
+              _campo(tc, 'Teléfono', Icons.phone, type: TextInputType.phone, c: c),
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: () async {
                   final f = await _pickDate(ctx, sFecha);
                   if (f != null) ss(() { sFecha = f; fechaDisp = _fmt(f); });
                 },
-                child: _fechaBtn(fechaDisp, sFecha != null, ac2),
+                child: _fechaBtn(fechaDisp, sFecha != null, c),
               ),
               const SizedBox(height: 10),
               _drop<String>(
-                value: sRol, ac: ac2,
+                value: sRol, c: c,
                 items: const [
                   DropdownMenuItem(value: 'jugador',    child: Text('Jugador')),
                   DropdownMenuItem(value: 'entrenador', child: Text('Entrenador')),
@@ -463,11 +436,10 @@ class _Body extends StatelessWidget {
                 ],
                 onChanged: (v) => ss(() { sRol = v!; equipoIdSeleccionado = null; }),
               ),
-              // Posición solo para jugadores
               if (sRol == 'jugador') ...[
                 const SizedBox(height: 10),
                 _drop<String>(
-                  value: sPos, ac: ac2,
+                  value: sPos, c: c,
                   items: const [
                     DropdownMenuItem(value: 'Portero',        child: Text('Portero')),
                     DropdownMenuItem(value: 'Defensa',        child: Text('Defensa')),
@@ -477,24 +449,18 @@ class _Body extends StatelessWidget {
                   onChanged: (v) => ss(() => sPos = v!),
                 ),
               ],
-              // Selector de equipo para jugadores y entrenadores
               if (sRol == 'jugador' || sRol == 'entrenador') ...[
                 const SizedBox(height: 10),
-                _selectorEquipo(
-                  equipoIdSeleccionado: equipoIdSeleccionado,
-                  onChanged: (v) => ss(() => equipoIdSeleccionado = v),
-                  ac: ac2,
-                ),
+                _selectorEquipo(equipoIdSeleccionado: equipoIdSeleccionado,
+                    onChanged: (v) => ss(() => equipoIdSeleccionado = v), c: c),
               ],
             ])),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dCtx),
-                child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-              ),
+              TextButton(onPressed: () => Navigator.pop(dCtx),
+                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: ac2, foregroundColor: Colors.white,
+                  backgroundColor: c, foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () async {
@@ -508,7 +474,7 @@ class _Body extends StatelessWidget {
                   );
                   Navigator.pop(dCtx);
                   _snack(context, ok ? 'Actualizado correctamente' : 'Error al actualizar',
-                      ok ? ac2 : Colors.red);
+                      ok ? c : Colors.red);
                 },
                 child: const Text('Guardar'),
               ),
@@ -519,18 +485,14 @@ class _Body extends StatelessWidget {
     ));
   }
 
-  //eliminar
-
   void _eliminar(BuildContext context, String uid, String nombre) {
     showDialog(context: context, builder: (dCtx) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text('Eliminar Usuario'),
       content: Text('¿Eliminar a "$nombre"?'),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dCtx),
-          child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-        ),
+        TextButton(onPressed: () => Navigator.pop(dCtx),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.red, foregroundColor: Colors.white,
@@ -541,7 +503,7 @@ class _Body extends StatelessWidget {
             final ok = await prov.eliminarUsuario(uid);
             Navigator.pop(dCtx);
             _snack(context, ok ? 'Usuario eliminado' : 'Error',
-                ok ? const Color(0xFF8B5CF6) : Colors.red);
+                ok ? const Color(0xFFD946EF) : Colors.red);
           },
           child: const Text('Eliminar'),
         ),

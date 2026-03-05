@@ -8,9 +8,7 @@ class ReservasAdminScreen extends StatefulWidget {
 }
 
 class _ReservasAdminScreenState extends State<ReservasAdminScreen> {
-  static const Color ac = Color(0xFFA855F7);
-  String _filtro = 'todas';
-
+  static const Color ac = Color(0xFFD946EF);
   Color _estadoColor(String e) {
     switch (e) {
       case 'confirmada': return Colors.green;
@@ -29,52 +27,17 @@ class _ReservasAdminScreenState extends State<ReservasAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final stream = _filtro == 'todas'
-        ? FirebaseFirestore.instance.collection('reservas').orderBy('fecha', descending: true).snapshots()
-        : FirebaseFirestore.instance.collection('reservas')
-        .where('estado', isEqualTo: _filtro).orderBy('fecha', descending: true).snapshots();
+    final stream = FirebaseFirestore.instance.collection('reservas').orderBy('fecha', descending: true).snapshots();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0FF),
+      backgroundColor: const Color(0xFFFAF0FF),
       appBar: AppBar(
-        title: const Text('📋 Reservas', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Reservas', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: ac,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: Column(children: [
-        // Banner decorativo
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [ac.withOpacity(0.8), const Color(0xFF7C3AED)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
-          child: const Text(
-            '✨ Gestiona todas las reservas desde aquí',
-            style: TextStyle(color: Colors.white, fontSize: 12, fontStyle: FontStyle.italic),
-          ),
-        ),
-        // Chips filtro
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-          color: Colors.white,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _chip('todas',      '🗂️ Todas'),
-                _chip('confirmada', '✅ Confirmadas'),
-                _chip('pendiente',  '⏳ Pendientes'),
-                _chip('cancelada',  '❌ Canceladas'),
-              ],
-            ),
-          ),
-        ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: stream,
@@ -115,7 +78,7 @@ class _ReservasAdminScreenState extends State<ReservasAdminScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        // Fila superior: pista + badge estado
+                        // pista y el  estado
                         Row(children: [
                           Container(
                             padding: const EdgeInsets.all(8),
@@ -132,7 +95,7 @@ class _ReservasAdminScreenState extends State<ReservasAdminScreen> {
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                             ),
                           ),
-                          // Badge de estado con icono
+                          // estado con icono
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
@@ -172,7 +135,7 @@ class _ReservasAdminScreenState extends State<ReservasAdminScreen> {
                           ),
                         ]),
                         const SizedBox(height: 6),
-                        // Nombre del usuario (no el UID)
+                        // Nombre del usuario
                         if (usuarioId != null)
                           _NombreUsuario(uid: usuarioId),
                         const SizedBox(height: 10),
@@ -201,9 +164,9 @@ class _ReservasAdminScreenState extends State<ReservasAdminScreen> {
                               ]),
                             ),
                             itemBuilder: (_) => const [
-                              PopupMenuItem(value: 'confirmada', child: Text('✅  Confirmar')),
-                              PopupMenuItem(value: 'pendiente',  child: Text('⏳  Pendiente')),
-                              PopupMenuItem(value: 'cancelada',  child: Text('❌  Cancelar')),
+                              PopupMenuItem(value: 'confirmada', child: Text(' Confirmar')),
+                              PopupMenuItem(value: 'pendiente',  child: Text('  Pendiente')),
+                              PopupMenuItem(value: 'cancelada',  child: Text('  Cancelar')),
                             ],
                           ),
                         ]),
@@ -219,35 +182,9 @@ class _ReservasAdminScreenState extends State<ReservasAdminScreen> {
     );
   }
 
-  Widget _chip(String valor, String label) {
-    final sel = _filtro == valor;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: () => setState(() => _filtro = valor),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: sel ? ac : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: sel ? ac : Colors.grey.shade300),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: sel ? Colors.white : Colors.black87,
-              fontWeight: sel ? FontWeight.bold : FontWeight.normal,
-              fontSize: 13,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
-// Widget para mostrar el nombre del usuario en lugar del UID
+
 class _NombreUsuario extends StatelessWidget {
   final String uid;
   const _NombreUsuario({required this.uid});
@@ -260,11 +197,11 @@ class _NombreUsuario extends StatelessWidget {
         final d = snap.data?.data() as Map<String, dynamic>?;
         final nombre = d?['nombre'] ?? 'Usuario';
         return Row(children: [
-          Icon(Icons.person_outline, size: 14, color: Colors.purple.shade300),
+          Icon(Icons.person_outline, size: 14, color: Colors.pink.shade300),
           const SizedBox(width: 5),
           Text(
             nombre,
-            style: TextStyle(fontSize: 13, color: Colors.purple.shade400, fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 13, color: Colors.pink.shade400, fontWeight: FontWeight.w500),
           ),
         ]);
       },

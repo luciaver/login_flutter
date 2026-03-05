@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../home_widgets.dart';
 
 class ReservasTab extends StatelessWidget {
   final String uid;
   const ReservasTab({super.key, required this.uid});
 
-  static const Color rosa     = Color(0xFF8B5CF6);
-  static const Color rosaDark = Color(0xFF8B5CF6);
+  static const Color rosa = Color(0xFF8B5CF6);
+
+  String get _uid {
+    if (uid.isNotEmpty) return uid;
+    return FirebaseAuth.instance.currentUser?.uid ?? '';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,16 +20,15 @@ class ReservasTab extends StatelessWidget {
       backgroundColor: const Color(0xFFF3EEFF),
       appBar: AppBar(
         title: const Text('Mis Reservas'),
-        backgroundColor: rosaDark,
+        backgroundColor: rosa,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
         elevation: 0,
       ),
       body: StreamBuilder<QuerySnapshot>(
-
         stream: FirebaseFirestore.instance
             .collection('reservas')
-            .where('usuarioId', isEqualTo: uid)
+            .where('usuarioId', isEqualTo: _uid)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -43,7 +47,7 @@ class ReservasTab extends StatelessWidget {
                 Icon(Icons.calendar_today_outlined, size: 72, color: rosa.withOpacity(0.3)),
                 const SizedBox(height: 16),
                 const Text('No tienes reservas',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF8B5CF6))),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: rosa)),
                 const SizedBox(height: 8),
                 Text('Ve a la pestaña Pistas para reservar',
                     style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),

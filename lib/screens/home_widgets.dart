@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Paleta unificada
+const Color _ac     = Color(0xFFF0ABFC);
+const Color _acDark = Color(0xFFD946EF);
+const Color _fondo  = Color(0xFFFAF0FF);
+
 class SeccionTitulo extends StatelessWidget {
   final String titulo;
   final IconData icono;
@@ -9,13 +14,11 @@ class SeccionTitulo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icono, color: color, size: 20),
-        const SizedBox(width: 8),
-        Text(titulo, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-      ],
-    );
+    return Row(children: [
+      Icon(icono, color: color, size: 20),
+      const SizedBox(width: 8),
+      Text(titulo, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+    ]);
   }
 }
 
@@ -32,13 +35,11 @@ class CardVacia extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, color: Colors.grey.shade400, size: 18),
-          const SizedBox(width: 10),
-          Text(texto, style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
-        ],
-      ),
+      child: Row(children: [
+        Icon(Icons.info_outline, color: Colors.grey.shade400, size: 18),
+        const SizedBox(width: 10),
+        Text(texto, style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+      ]),
     );
   }
 }
@@ -52,39 +53,27 @@ class StatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     if (rol == 'arbitro') {
       return _StatCard(
-        label: 'Partidos',
-        icono: Icons.sports_soccer,
-        color: const Color(0xFFBEA6FF),
+        label: 'Partidos', icono: Icons.sports_soccer, color: _acDark,
         stream: FirebaseFirestore.instance
-            .collection('partidos')
-            .where('arbitroId', isEqualTo: uid)
-            .snapshots(),
+            .collection('partidos').where('arbitroId', isEqualTo: uid).snapshots(),
       );
     }
-    return Row(
-      children: [
-        Expanded(child: _StatCard(
-          label: 'Reservas', icono: Icons.calendar_today, color: const Color(0xFF8B5CF6),
-          stream: FirebaseFirestore.instance
-              .collection('reservas')
-              .where('usuarioId', isEqualTo: uid)
-              .snapshots(),
-        )),
-        const SizedBox(width: 12),
-        Expanded(child: _StatCard(
-          label: 'Equipos', icono: Icons.groups, color: const Color(0xFF7C3AED),
-          stream: rol == 'entrenador'
-              ? FirebaseFirestore.instance
-              .collection('equipos')
-              .where('entrenadorId', isEqualTo: uid)
-              .snapshots()
-              : FirebaseFirestore.instance
-              .collection('equipos')
-              .where('jugadoresIds', arrayContains: uid)
-              .snapshots(),
-        )),
-      ],
-    );
+    return Row(children: [
+      Expanded(child: _StatCard(
+        label: 'Reservas', icono: Icons.calendar_today, color: _acDark,
+        stream: FirebaseFirestore.instance
+            .collection('reservas').where('usuarioId', isEqualTo: uid).snapshots(),
+      )),
+      const SizedBox(width: 12),
+      Expanded(child: _StatCard(
+        label: 'Equipos', icono: Icons.groups, color: _acDark,
+        stream: rol == 'entrenador'
+            ? FirebaseFirestore.instance.collection('equipos')
+            .where('entrenadorId', isEqualTo: uid).snapshots()
+            : FirebaseFirestore.instance.collection('equipos')
+            .where('jugadoresIds', arrayContains: uid).snapshots(),
+      )),
+    ]);
   }
 }
 
@@ -108,21 +97,18 @@ class _StatCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: color.withOpacity(0.2)),
           ),
-          child: Column(
-            children: [
-              Icon(icono, color: color, size: 24),
-              const SizedBox(height: 6),
-              Text('$count', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-              Text(label, style: TextStyle(fontSize: 11, color: color), textAlign: TextAlign.center),
-            ],
-          ),
+          child: Column(children: [
+            Icon(icono, color: color, size: 24),
+            const SizedBox(height: 6),
+            Text('$count', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+            Text(label, style: TextStyle(fontSize: 11, color: color), textAlign: TextAlign.center),
+          ]),
         );
       },
     );
   }
 }
 
-//Reserva card
 class ReservaCard extends StatelessWidget {
   final Map<String, dynamic> data;
   const ReservaCard({super.key, required this.data});
@@ -144,7 +130,7 @@ class ReservaCard extends StatelessWidget {
     String fecha = data['fecha'] ?? '';
     try {
       final d = DateTime.parse(fecha);
-      fecha = '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+      fecha = '${d.day.toString().padLeft(2,'0')}/${d.month.toString().padLeft(2,'0')}/${d.year}';
     } catch (_) {}
 
     return Container(
@@ -153,43 +139,36 @@ class ReservaCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: const Color(0xFF8B5CF6).withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: _acDark.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.sports_tennis, color: Color(0xFF8B5CF6), size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(pistaNombre, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text('$fecha  $horaInicio - $horaFin',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-                color: _color(estado).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8)),
-            child: Text(estado,
-                style: TextStyle(color: _color(estado), fontSize: 11, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+              color: _acDark.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+          child: Icon(Icons.sports_tennis, color: _acDark, size: 22),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(pistaNombre, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('$fecha  $horaInicio - $horaFin',
+                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          ]),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+              color: _color(estado).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8)),
+          child: Text(estado,
+              style: TextStyle(color: _color(estado), fontSize: 11, fontWeight: FontWeight.bold)),
+        ),
+      ]),
     );
   }
 }
 
-//Próximas reservas
 class ProximasReservas extends StatelessWidget {
   final String uid;
   const ProximasReservas({super.key, required this.uid});
@@ -198,32 +177,24 @@ class ProximasReservas extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('reservas')
-          .where('usuarioId', isEqualTo: uid)
-          .limit(3)
-          .snapshots(),
+          .collection('reservas').where('usuarioId', isEqualTo: uid).limit(3).snapshots(),
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) return const CardVacia(texto: 'No tienes reservas próximas');
-
         final sorted = List.of(docs);
         sorted.sort((a, b) {
           final fa = (a.data() as Map<String, dynamic>)['fecha'] as String? ?? '';
           final fb = (b.data() as Map<String, dynamic>)['fecha'] as String? ?? '';
           return fa.compareTo(fb);
         });
-
         return Column(
-          children: sorted
-              .map((d) => ReservaCard(data: d.data() as Map<String, dynamic>))
-              .toList(),
+          children: sorted.map((d) => ReservaCard(data: d.data() as Map<String, dynamic>)).toList(),
         );
       },
     );
   }
 }
 
-//Partiados lista
 class PartidosList extends StatelessWidget {
   final String uid;
   final bool soloArbitro;
@@ -233,23 +204,18 @@ class PartidosList extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('partidos')
-          .where('arbitroId', isEqualTo: uid)
-          .snapshots(),
+          .collection('partidos').where('arbitroId', isEqualTo: uid).snapshots(),
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) return const CardVacia(texto: 'Sin partidos asignados');
         return Column(
-          children: docs
-              .map((d) => PartidoCard(data: d.data() as Map<String, dynamic>))
-              .toList(),
+          children: docs.map((d) => PartidoCard(data: d.data() as Map<String, dynamic>)).toList(),
         );
       },
     );
   }
 }
 
-// Partidos del entrenador
 class PartidosEntrenador extends StatelessWidget {
   final String uid;
   const PartidosEntrenador({super.key, required this.uid});
@@ -258,17 +224,13 @@ class PartidosEntrenador extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder<QuerySnapshot>(
       future: FirebaseFirestore.instance
-          .collection('equipos')
-          .where('entrenadorId', isEqualTo: uid)
-          .get(),
+          .collection('equipos').where('entrenadorId', isEqualTo: uid).get(),
       builder: (ctx, snap) {
         final ids = snap.data?.docs.map((d) => d.id).toList() ?? [];
         if (ids.isEmpty) return const CardVacia(texto: 'Sin partidos pendientes');
         return StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
-              .collection('partidos')
-              .where('equipoLocalId', whereIn: ids)
-              .snapshots(),
+              .collection('partidos').where('equipoLocalId', whereIn: ids).snapshots(),
           builder: (ctx2, snap2) {
             final docs = snap2.data?.docs ?? [];
             if (docs.isEmpty) return const CardVacia(texto: 'Sin partidos pendientes');
@@ -285,7 +247,6 @@ class PartidosEntrenador extends StatelessWidget {
   }
 }
 
-// Partido card
 class PartidoCard extends StatelessWidget {
   final Map<String, dynamic> data;
   const PartidoCard({super.key, required this.data});
@@ -312,49 +273,36 @@ class PartidoCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))
-        ],
+        color: Colors.white, borderRadius: BorderRadius.circular(14),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-                color: const Color(0xFFBEA6FF).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.sports_soccer, color: Color(0xFFBEA6FF), size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    _NombreEquipo(id: data['equipoLocalId']),
-                    const Text(' vs ', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                    _NombreEquipo(id: data['equipoVisitanteId']),
-                  ],
-                ),
-                Text('$fecha  ${data['horaInicio'] ?? ''}',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-                color: _color(estado).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8)),
-            child: Text(estado.replaceAll('_', ' '),
-                style: TextStyle(
-                    color: _color(estado), fontSize: 10, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+              color: _acDark.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+          child: Icon(Icons.sports_soccer, color: _acDark, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              _NombreEquipo(id: data['equipoLocalId']),
+              const Text(' vs ', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+              _NombreEquipo(id: data['equipoVisitanteId']),
+            ]),
+            Text('$fecha  ${data['horaInicio'] ?? ''}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          ]),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+              color: _color(estado).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          child: Text(estado.replaceAll('_', ' '),
+              style: TextStyle(color: _color(estado), fontSize: 10, fontWeight: FontWeight.bold)),
+        ),
+      ]),
     );
   }
 }
@@ -378,18 +326,13 @@ class _NombreEquipo extends StatelessWidget {
   }
 }
 
-//Equipo detalle card
 class EquipoDetalleCard extends StatelessWidget {
   final String equipoId;
   final Map<String, dynamic> data;
   final String rol;
   final String uid;
-  const EquipoDetalleCard(
-      {super.key,
-        required this.equipoId,
-        required this.data,
-        required this.rol,
-        required this.uid});
+  const EquipoDetalleCard({super.key, required this.equipoId, required this.data,
+    required this.rol, required this.uid});
 
   @override
   Widget build(BuildContext context) {
@@ -402,7 +345,7 @@ class EquipoDetalleCard extends StatelessWidget {
       elevation: 3,
       child: ExpansionTile(
         leading: CircleAvatar(
-          backgroundColor: const Color(0xFF7C3AED),
+          backgroundColor: _acDark,
           child: Text(nombre[0].toUpperCase(),
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         ),
@@ -411,12 +354,7 @@ class EquipoDetalleCard extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              children: [
-                ...jugadoresIds.map((jid) => _UsuarioTile(uid: jid)),
-
-              ],
-            ),
+            child: Column(children: [...jugadoresIds.map((jid) => _UsuarioTile(uid: jid))]),
           ),
         ],
       ),
@@ -438,8 +376,8 @@ class _UsuarioTile extends StatelessWidget {
           dense: true,
           leading: const CircleAvatar(
               radius: 14,
-              backgroundColor: Color(0xFFF3EEFF),
-              child: Icon(Icons.person, size: 16, color: Color(0xFF8B5CF6))),
+              backgroundColor: Color(0xFFFAF0FF),
+              child: Icon(Icons.person, size: 16, color: Color(0xFFD946EF))),
           title: Text(d?['nombre'] ?? 'Jugador'),
           subtitle: (d?['posicion'] ?? '').isNotEmpty ? Text(d!['posicion']) : null,
         );
@@ -448,7 +386,6 @@ class _UsuarioTile extends StatelessWidget {
   }
 }
 
-// perfil de card
 class PerfilInfoCard extends StatelessWidget {
   final Map<String, dynamic> data;
   const PerfilInfoCard({super.key, required this.data});
@@ -466,52 +403,35 @@ class PerfilInfoCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-              color: const Color(0xFF8B5CF6).withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4))
-        ],
+        color: Colors.white, borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(
+            color: _acDark.withOpacity(0.08), blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: items.asMap().entries.map((e) {
           final item = e.value;
           final isLast = e.key == items.length - 1;
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                          color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Icon(item['icon'] as IconData,
-                          color: const Color(0xFF8B5CF6), size: 18),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item['label'],
-                            style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        Text(
-                            item['valor']?.toString().isNotEmpty == true
-                                ? item['valor']
-                                : '-',
-                            style: const TextStyle(fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ],
+          return Column(children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                      color: _acDark.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                  child: Icon(item['icon'] as IconData, color: _acDark, size: 18),
                 ),
-              ),
-              if (!isLast) Divider(height: 1, color: Colors.grey.shade100),
-            ],
-          );
+                const SizedBox(width: 12),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(item['label'], style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  Text(
+                      item['valor']?.toString().isNotEmpty == true ? item['valor'] : '-',
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                ]),
+              ]),
+            ),
+            if (!isLast) Divider(height: 1, color: Colors.grey.shade100),
+          ]);
         }).toList(),
       ),
     );
