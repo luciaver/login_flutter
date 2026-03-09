@@ -91,7 +91,7 @@ class _ReservarPistaScreenState extends State<ReservarPistaScreen> {
         'fecha': fechaStr,
         'horaInicio': _horaInicio,
         'horaFin': _horaFin,
-        'estado': 'pendiente', // <-- cambiado de 'confirmada' a 'pendiente'
+        'estado': 'pendiente',
         'createdAt': FieldValue.serverTimestamp(),
       });
 

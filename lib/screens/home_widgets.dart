@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
-// Paleta unificada
 const Color _ac     = Color(0xFFF0ABFC);
 const Color _acDark = Color(0xFFD946EF);
 const Color _fondo  = Color(0xFFFAF0FF);

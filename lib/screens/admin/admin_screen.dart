@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import ' users_management_screen.dart';
+import 'users_management_screen.dart';
 import '../login_screen.dart';
 import 'equipos_screen.dart';
 import 'instalaciones_screen.dart';
@@ -13,7 +13,6 @@ class AdminScreen extends StatelessWidget {
   static const Color fondoApp    = Color(0xFFF4F4F4);
   static const Color appBarColor = Color(0xFFAD1457);
   static const Color cardColor   = Color(0xFFF48FB1);
-  static const Color iconCircle  = Color(0xFFFFFFFF);
 
   @override
   Widget build(BuildContext context) {
@@ -56,11 +55,11 @@ class AdminScreen extends StatelessWidget {
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
               children: [
-                _card(context, 'Usuarios',      Icons.people,          const UsersManagementScreen()),
-                _card(context, 'Equipos',       Icons.groups,          const EquiposScreen()),
-                _card(context, 'Reservas',      Icons.calendar_today,  const ReservasAdminScreen()),
-                _card(context, 'Instalaciones', Icons.sports_tennis,   const InstalacionesScreen()),
-                _card(context, 'Partidos',      Icons.sports_soccer,   const PartidosScreen()),
+                _card(context, 'Usuarios',      Icons.people,         const UsersManagementScreen()),
+                _card(context, 'Equipos',       Icons.groups,         const EquiposScreen()),
+                _card(context, 'Reservas',      Icons.calendar_today, const ReservasAdminScreen()),
+                _card(context, 'Instalaciones', Icons.sports_tennis,  const InstalacionesScreen()),
+                _card(context, 'Partidos',      Icons.sports_soccer,  const PartidosScreen()),
               ],
             ),
           ),

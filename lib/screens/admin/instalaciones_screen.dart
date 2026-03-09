@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../provider/instalaciones_provider.dart';
 
-class InstalacionesScreen extends StatefulWidget {
+class InstalacionesScreen extends StatelessWidget {
   const InstalacionesScreen({super.key});
 
-  @override
-  State<InstalacionesScreen> createState() => _InstalacionesScreenState();
-}
-
-class _InstalacionesScreenState extends State<InstalacionesScreen> {
   static const Color ac     = Color(0xFFF0ABFC);
   static const Color acDark = Color(0xFFD946EF);
   static const Color fondo  = Color(0xFFFAF0FF);
+  static const _deportes    = ['Fútbol', 'Baloncesto', 'Pádel', 'Tenis'];
 
   String _emojiDeporte(String tipo) {
     switch (tipo) {
@@ -25,6 +23,7 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final prov = Provider.of<InstalacionesProvider>(context, listen: false);
     return Scaffold(
       backgroundColor: fondo,
       appBar: AppBar(
@@ -34,7 +33,7 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
         elevation: 0,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('pistas').snapshots(),
+        stream: prov.obtenerPistas(),
         builder: (_, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: acDark));
@@ -44,21 +43,20 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
               child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 const Text('🏟️', style: TextStyle(fontSize: 60)),
                 const SizedBox(height: 14),
-                const Text('Aún no hay pistas añadidas',
+                const Text('Aún no hay pistas',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: acDark)),
                 const SizedBox(height: 6),
-                Text('Pulsa + para añadir la primera ',
+                Text('Pulsa + para añadir la primera',
                     style: TextStyle(color: Colors.grey.shade500)),
               ]),
             );
           }
-
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(14, 16, 14, 100),
             itemCount: snap.data!.docs.length,
             itemBuilder: (_, i) {
-              final doc = snap.data!.docs[i];
-              final d = doc.data() as Map<String, dynamic>;
+              final doc  = snap.data!.docs[i];
+              final d    = doc.data() as Map<String, dynamic>;
               final nombre     = d['nombre'] ?? 'Pista';
               final tipo       = d['tipo'] ?? '';
               final precio     = d['precio']?.toString() ?? '0';
@@ -70,9 +68,7 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(color: acDark.withOpacity(0.12), blurRadius: 12, offset: const Offset(0, 5)),
-                  ],
+                  boxShadow: [BoxShadow(color: acDark.withOpacity(0.12), blurRadius: 12, offset: const Offset(0, 5))],
                   border: Border.all(color: ac.withOpacity(0.3), width: 1.5),
                 ),
                 child: Column(children: [
@@ -82,8 +78,7 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [acDark.withOpacity(0.12), ac.withOpacity(0.08)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
+                        begin: Alignment.centerLeft, end: Alignment.centerRight,
                       ),
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
                     ),
@@ -106,20 +101,17 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
                           Row(children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: acDark,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                              decoration: BoxDecoration(color: acDark, borderRadius: BorderRadius.circular(8)),
                               child: Text(tipo,
                                   style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                             ),
                             const SizedBox(width: 8),
-                            Text(' $precio€/h',
+                            Text('$precio€/h',
                                 style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
                           ]),
                         ]),
                       ),
-                      // Badge estado en cabecera
+                      // Badge estado
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
@@ -139,58 +131,32 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
                       ),
                     ]),
                   ),
+                  // Acciones
                   Padding(
                     padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                     child: Row(children: [
-                      // Switch de disponibilidad
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: ac.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: ac.withOpacity(0.3)),
+                      // Switch disponibilidad
+                      Row(mainAxisSize: MainAxisSize.min, children: [
+                        Switch(
+                          value: disponible,
+                          activeColor: acDark,
+                          onChanged: (v) => prov.toggleDisponible(doc.id, v),
                         ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Switch(
-                            value: disponible,
-                            activeColor: acDark,
-                            onChanged: (v) => FirebaseFirestore.instance
-                                .collection('pistas').doc(doc.id).update({'disponible': v}),
+                        Text(
+                          disponible ? 'Abierta' : 'Cerrada',
+                          style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold,
+                            color: disponible ? Colors.green : Colors.red,
                           ),
-                          const SizedBox(width: 4),
-                          PopupMenuButton<String>(
-                            onSelected: (val) {
-                              FirebaseFirestore.instance
-                                  .collection('pistas').doc(doc.id)
-                                  .update({'disponible': val == 'abierta'});
-                            },
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: Row(mainAxisSize: MainAxisSize.min, children: [
-                              Text(disponible ? 'Abierta' : 'Cerrada',
-                                  style: TextStyle(
-                                    fontSize: 12, fontWeight: FontWeight.bold,
-                                    color: disponible ? Colors.green : Colors.red,
-                                  )),
-                              Icon(Icons.arrow_drop_down,
-                                  color: disponible ? Colors.green : Colors.red, size: 18),
-                            ]),
-                            itemBuilder: (_) => const [
-                              PopupMenuItem(value: 'abierta', child: Text('  Abierta')),
-                              PopupMenuItem(value: 'cerrada', child: Text('  Cerrada')),
-                            ],
-                          ),
-                        ]),
-                      ),
+                        ),
+                      ]),
                       const Spacer(),
-                      // Editar
                       TextButton.icon(
                         onPressed: () => _editar(context, doc.id, d),
                         icon: const Icon(Icons.edit_note, size: 16),
                         label: const Text('Editar', style: TextStyle(fontWeight: FontWeight.bold)),
                         style: TextButton.styleFrom(foregroundColor: acDark),
                       ),
-                      const SizedBox(width: 4),
-                      // Eliminar
                       TextButton.icon(
                         onPressed: () => _eliminar(context, doc.id, nombre),
                         icon: const Icon(Icons.delete_outline, size: 16),
@@ -214,30 +180,24 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
     );
   }
 
-  static const _deportes = ['Fútbol', 'Baloncesto', 'Pádel', 'Tenis'];
-
   void _agregar(BuildContext context) {
     final nombreCtrl = TextEditingController();
     final precioCtrl = TextEditingController();
-    String tipoLocal = 'Fútbol';
+    String tipo = 'Fútbol';
 
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
-        builder: (dialogCtx, ss) => AlertDialog(
+        builder: (ctx, ss) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(children: [
-            Text('🏟️ ', style: TextStyle(fontSize: 22)),
-            Text('Nueva Instalación', style: TextStyle(fontWeight: FontWeight.bold)),
-          ]),
-          content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          title: const Text('🏟️ Nueva Instalación', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
             _campo(nombreCtrl, 'Nombre de la pista', Icons.sports_tennis),
             const SizedBox(height: 12),
             _campo(precioCtrl, 'Precio €/hora', Icons.euro, type: TextInputType.number),
             const SizedBox(height: 12),
-            _dropDeporte(tipoLocal, (v) { if (v != null) ss(() => tipoLocal = v); }),
-          ])),
+            _dropDeporte(tipo, (v) { if (v != null) ss(() => tipo = v); }),
+          ]),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
@@ -249,27 +209,14 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () async {
-                final nombre = nombreCtrl.text.trim();
-                if (nombre.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Introduce el nombre de la pista'),
-                    backgroundColor: Colors.orange, behavior: SnackBarBehavior.floating,
-                  ));
-                  return;
-                }
-                await FirebaseFirestore.instance.collection('pistas').add({
-                  'nombre': nombre, 'tipo': tipoLocal,
-                  'precio': precioCtrl.text.trim().isEmpty ? '0' : precioCtrl.text.trim(),
-                  'disponible': true,
-                });
+                if (nombreCtrl.text.trim().isEmpty) return;
+                final prov = Provider.of<InstalacionesProvider>(ctx, listen: false);
+                await prov.agregarPista(
+                  nombre: nombreCtrl.text.trim(),
+                  tipo: tipo,
+                  precio: precioCtrl.text.trim().isEmpty ? '0' : precioCtrl.text.trim(),
+                );
                 Navigator.pop(ctx);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(' Pista "$nombre" creada!'),
-                    backgroundColor: acDark, behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ));
-                }
               },
             ),
           ],
@@ -281,25 +228,21 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
   void _editar(BuildContext context, String id, Map<String, dynamic> data) {
     final nombreCtrl = TextEditingController(text: data['nombre']);
     final precioCtrl = TextEditingController(text: data['precio']?.toString() ?? '');
-    String tipoLocal = data['tipo'] ?? 'Fútbol';
+    String tipo = data['tipo'] ?? 'Fútbol';
 
     showDialog(
       context: context,
-      barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
-        builder: (dialogCtx, ss) => AlertDialog(
+        builder: (ctx, ss) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(children: [
-            Text('✏️ ', style: TextStyle(fontSize: 22)),
-            Text('Editar Instalación', style: TextStyle(fontWeight: FontWeight.bold)),
-          ]),
-          content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          title: const Text('✏️ Editar Instalación', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
             _campo(nombreCtrl, 'Nombre', Icons.sports_tennis),
             const SizedBox(height: 12),
             _campo(precioCtrl, 'Precio €/hora', Icons.euro, type: TextInputType.number),
             const SizedBox(height: 12),
-            _dropDeporte(tipoLocal, (v) { if (v != null) ss(() => tipoLocal = v); }),
-          ])),
+            _dropDeporte(tipo, (v) { if (v != null) ss(() => tipo = v); }),
+          ]),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx),
                 child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
@@ -311,11 +254,13 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () async {
-                await FirebaseFirestore.instance.collection('pistas').doc(id).update({
-                  'nombre': nombreCtrl.text.trim(),
-                  'tipo': tipoLocal,
-                  'precio': precioCtrl.text.trim(),
-                });
+                final prov = Provider.of<InstalacionesProvider>(ctx, listen: false);
+                await prov.editarPista(
+                  id: id,
+                  nombre: nombreCtrl.text.trim(),
+                  tipo: tipo,
+                  precio: precioCtrl.text.trim(),
+                );
                 Navigator.pop(ctx);
               },
             ),
@@ -330,18 +275,8 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(' Eliminar instalación'),
-        content: RichText(
-          text: TextSpan(
-            style: const TextStyle(color: Colors.black87, fontSize: 15),
-            children: [
-              const TextSpan(text: '¿Seguro que quieres eliminar '),
-              TextSpan(text: '"$nombre"',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: acDark)),
-              const TextSpan(text: '? No se puede deshacer.'),
-            ],
-          ),
-        ),
+        title: const Text('Eliminar instalación'),
+        content: Text('¿Seguro que quieres eliminar "$nombre"?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
           ElevatedButton.icon(
@@ -352,15 +287,9 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () async {
-              await FirebaseFirestore.instance.collection('pistas').doc(id).delete();
+              final prov = Provider.of<InstalacionesProvider>(ctx, listen: false);
+              await prov.eliminarPista(id);
               Navigator.pop(ctx);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Pista "$nombre" eliminada'),
-                  backgroundColor: Colors.red.shade700, behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ));
-              }
             },
           ),
         ],
@@ -385,8 +314,7 @@ class _InstalacionesScreenState extends State<InstalacionesScreen> {
 
   Widget _dropDeporte(String value, ValueChanged<String?> onChanged) {
     return Container(
-      decoration: BoxDecoration(
-          border: Border.all(color: acDark), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(border: Border.all(color: acDark), borderRadius: BorderRadius.circular(12)),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(

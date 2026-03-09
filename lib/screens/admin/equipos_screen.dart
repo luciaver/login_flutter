@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../provider/equipos_provider.dart';
 
 class EquiposScreen extends StatelessWidget {
   const EquiposScreen({super.key});
 
-  static const Color ac     = Color(0xFFF0ABFC);
   static const Color acDark = Color(0xFFD946EF);
   static const Color fondo  = Color(0xFFFAF0FF);
+  static const _deportes    = ['Fútbol', 'Baloncesto', 'Pádel', 'Tenis'];
 
   @override
   Widget build(BuildContext context) {
+    final prov = Provider.of<EquiposProvider>(context, listen: false);
     return Scaffold(
       backgroundColor: fondo,
       appBar: AppBar(
@@ -18,7 +21,7 @@ class EquiposScreen extends StatelessWidget {
         foregroundColor: Colors.white,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('equipos').snapshots(),
+        stream: prov.obtenerEquipos(),
         builder: (_, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: acDark));
@@ -98,15 +101,16 @@ class EquiposScreen extends StatelessWidget {
                             style: TextStyle(color: Colors.grey.shade500, fontSize: 13, fontStyle: FontStyle.italic)),
                       ]),
                     ),
+                  // Jugadores
                   if (jugadorIds.isNotEmpty) ...[
                     Divider(height: 1, color: Colors.grey.shade200),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
                       child: Row(children: [
-                        Icon(Icons.people, color: acDark, size: 16),
+                        const Icon(Icons.people, color: acDark, size: 16),
                         const SizedBox(width: 6),
                         Text('Jugadores (${jugadorIds.length})',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: acDark, fontSize: 13)),
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: acDark, fontSize: 13)),
                       ]),
                     ),
                     ...jugadorIds.map((jid) => _JugadorTile(uid: jid)),
@@ -136,47 +140,47 @@ class EquiposScreen extends StatelessWidget {
     );
   }
 
-  static const _deportes = ['Fútbol', 'Baloncesto', 'Pádel', 'Tenis'];
-
   void _agregar(BuildContext context) {
     final nc = TextEditingController();
     String deporte = 'Fútbol';
     String? entrenadorId;
 
-    showDialog(context: context, builder: (ctx) => StatefulBuilder(
-      builder: (ctx, ss) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(children: [
-          Icon(Icons.group_add, color: acDark),
-          SizedBox(width: 8),
-          Text('Nuevo Equipo'),
-        ]),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          _campo(nc, 'Nombre del equipo', Icons.groups),
-          const SizedBox(height: 12),
-          _dropDeporte(deporte, (v) => ss(() => deporte = v!)),
-          const SizedBox(height: 12),
-          _SelectorEntrenador(selectedId: entrenadorId, onChanged: (v) => ss(() => entrenadorId = v)),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: acDark, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            onPressed: () async {
-              if (nc.text.trim().isEmpty) return;
-              await FirebaseFirestore.instance.collection('equipos').add({
-                'nombre': nc.text.trim(), 'deporte': deporte, 'jugadoresIds': [],
-                if (entrenadorId != null) 'entrenadorId': entrenadorId,
-              });
-              Navigator.pop(ctx);
-            },
-            child: const Text('Crear'),
-          ),
-        ],
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, ss) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(children: [
+            Icon(Icons.group_add, color: acDark),
+            SizedBox(width: 8),
+            Text('Nuevo Equipo'),
+          ]),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            _campo(nc, 'Nombre del equipo', Icons.groups),
+            const SizedBox(height: 12),
+            _dropDeporte(deporte, (v) => ss(() => deporte = v!)),
+            const SizedBox(height: 12),
+            _SelectorEntrenador(selectedId: entrenadorId, onChanged: (v) => ss(() => entrenadorId = v)),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: acDark, foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              onPressed: () async {
+                if (nc.text.trim().isEmpty) return;
+                final prov = Provider.of<EquiposProvider>(ctx, listen: false);
+                await prov.agregarEquipo(
+                    nombre: nc.text.trim(), deporte: deporte, entrenadorId: entrenadorId);
+                Navigator.pop(ctx);
+              },
+              child: const Text('Crear'),
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   void _editar(BuildContext context, String id, Map<String, dynamic> data) {
@@ -184,58 +188,64 @@ class EquiposScreen extends StatelessWidget {
     String deporte = data['deporte'] ?? 'Fútbol';
     String? entrenadorId = data['entrenadorId'] as String?;
 
-    showDialog(context: context, builder: (ctx) => StatefulBuilder(
-      builder: (ctx, ss) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(children: [
-          Icon(Icons.edit, color: acDark),
-          SizedBox(width: 8),
-          Text('Editar Equipo'),
-        ]),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          _campo(nc, 'Nombre', Icons.groups),
-          const SizedBox(height: 12),
-          _dropDeporte(deporte, (v) => ss(() => deporte = v!)),
-          const SizedBox(height: 12),
-          _SelectorEntrenador(selectedId: entrenadorId, onChanged: (v) => ss(() => entrenadorId = v)),
-        ]),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: acDark, foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            onPressed: () async {
-              final updateData = <String, dynamic>{'nombre': nc.text.trim(), 'deporte': deporte};
-              if (entrenadorId != null) updateData['entrenadorId'] = entrenadorId;
-              else updateData['entrenadorId'] = FieldValue.delete();
-              await FirebaseFirestore.instance.collection('equipos').doc(id).update(updateData);
-              Navigator.pop(ctx);
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, ss) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(children: [
+            Icon(Icons.edit, color: acDark),
+            SizedBox(width: 8),
+            Text('Editar Equipo'),
+          ]),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            _campo(nc, 'Nombre', Icons.groups),
+            const SizedBox(height: 12),
+            _dropDeporte(deporte, (v) => ss(() => deporte = v!)),
+            const SizedBox(height: 12),
+            _SelectorEntrenador(selectedId: entrenadorId, onChanged: (v) => ss(() => entrenadorId = v)),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: acDark, foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              onPressed: () async {
+                final prov = Provider.of<EquiposProvider>(ctx, listen: false);
+                await prov.editarEquipo(
+                    id: id, nombre: nc.text.trim(), deporte: deporte, entrenadorId: entrenadorId);
+                Navigator.pop(ctx);
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   void _eliminar(BuildContext context, String id, String nombre) {
-    showDialog(context: context, builder: (ctx) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text('Eliminar equipo'),
-      content: Text('¿Eliminar "$nombre"?'),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-          onPressed: () async {
-            await FirebaseFirestore.instance.collection('equipos').doc(id).delete();
-            Navigator.pop(ctx);
-          },
-          child: const Text('Eliminar'),
-        ),
-      ],
-    ));
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Eliminar equipo'),
+        content: Text('¿Eliminar "$nombre"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () async {
+              final prov = Provider.of<EquiposProvider>(ctx, listen: false);
+              await prov.eliminarEquipo(id);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _campo(TextEditingController ctrl, String label, IconData icon) => TextField(
@@ -353,9 +363,7 @@ class _SelectorEntrenador extends StatelessWidget {
       future: FirebaseFirestore.instance
           .collection('usuarios').where('rol', isEqualTo: 'entrenador').get(),
       builder: (_, snap) {
-        if (!snap.hasData) {
-          return const LinearProgressIndicator(color: Color(0xFFD946EF));
-        }
+        if (!snap.hasData) return const LinearProgressIndicator(color: Color(0xFFD946EF));
         return Container(
           decoration: BoxDecoration(
               border: Border.all(color: const Color(0xFFD946EF)),
@@ -374,8 +382,7 @@ class _SelectorEntrenador extends StatelessWidget {
                 const DropdownMenuItem<String>(value: null, child: Text('Sin entrenador')),
                 ...snap.data!.docs.map((doc) {
                   final d = doc.data() as Map<String, dynamic>;
-                  return DropdownMenuItem<String>(
-                      value: doc.id, child: Text(d['nombre'] ?? doc.id));
+                  return DropdownMenuItem<String>(value: doc.id, child: Text(d['nombre'] ?? doc.id));
                 }),
               ],
               onChanged: onChanged,

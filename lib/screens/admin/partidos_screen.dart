@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../provider/partidos_provider.dart';
 
 class PartidosScreen extends StatelessWidget {
   const PartidosScreen({super.key});
@@ -9,6 +11,7 @@ class PartidosScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final prov = Provider.of<PartidosProvider>(context, listen: false);
     return Scaffold(
       backgroundColor: const Color(0xFFFAF0FF),
       appBar: AppBar(
@@ -18,29 +21,20 @@ class PartidosScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('partidos')
-            .orderBy('fecha', descending: true)
-            .snapshots(),
+        stream: prov.obtenerPartidos(),
         builder: (_, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: acDark));
           }
-
           if (!snap.hasData || snap.data!.docs.isEmpty) {
             return Center(
               child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 const Text('⚽', style: TextStyle(fontSize: 56)),
                 const SizedBox(height: 12),
-                Text('No hay partidos creados',
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 15)),
-                const SizedBox(height: 4),
-                Text('Pulsa + para crear el primero',
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
+                Text('No hay partidos creados', style: TextStyle(color: Colors.grey.shade500)),
               ]),
             );
           }
-
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(14, 16, 14, 100),
             itemCount: snap.data!.docs.length,
@@ -49,8 +43,7 @@ class PartidosScreen extends StatelessWidget {
               final d     = doc.data() as Map<String, dynamic>;
               final estado = d['estado'] ?? 'programado';
 
-              String fecha = '';
-              String hora  = '';
+              String fecha = '', hora = '';
               try {
                 final dt = DateTime.parse(d['fecha']);
                 fecha = '${dt.day.toString().padLeft(2,'0')}/${dt.month.toString().padLeft(2,'0')}/${dt.year}';
@@ -62,19 +55,16 @@ class PartidosScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(color: acDark.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 4)),
-                  ],
+                  boxShadow: [BoxShadow(color: acDark.withOpacity(0.12), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: Column(children: [
-                  // Cabecera con degradado
+                  // Cabecera
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [acDark.withOpacity(0.12), ac.withOpacity(0.08)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
+                        begin: Alignment.centerLeft, end: Alignment.centerRight,
                       ),
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
                     ),
@@ -84,7 +74,7 @@ class PartidosScreen extends StatelessWidget {
                       Expanded(
                         flex: 5,
                         child: _NombresVs(
-                          localId:     d['equipoLocalId'],
+                          localId: d['equipoLocalId'],
                           visitanteId: d['equipoVisitanteId'],
                         ),
                       ),
@@ -110,31 +100,26 @@ class PartidosScreen extends StatelessWidget {
                       if (d['arbitroId'] != null) _ArbitroChip(arbitroId: d['arbitroId']),
                     ]),
                   ),
-                  // Resultado si existe
                   if (d['golLocal'] != null && d['golVisitante'] != null)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
                       child: Row(children: [
                         const Icon(Icons.sports_score, size: 15, color: acDark),
                         const SizedBox(width: 6),
-                        Text(
-                          'Resultado: ${d['golLocal']} - ${d['golVisitante']}',
-                          style: const TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.bold, color: acDark),
-                        ),
+                        Text('Resultado: ${d['golLocal']} - ${d['golVisitante']}',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: acDark)),
                       ]),
                     ),
-                  // Botones editar / eliminar
+                  // Acciones
                   Padding(
                     padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
                     child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                       TextButton.icon(
-                        onPressed: () => _editar(context, doc.id, d),
+                        onPressed: () => _mostrarFormulario(context, doc.id, d),
                         icon: const Icon(Icons.edit_note, size: 16),
                         label: const Text('Editar'),
                         style: TextButton.styleFrom(foregroundColor: acDark),
                       ),
-                      const SizedBox(width: 4),
                       TextButton.icon(
                         onPressed: () => _eliminar(context, doc.id),
                         icon: const Icon(Icons.delete_outline, size: 16),
@@ -150,15 +135,13 @@ class PartidosScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _crear(context),
+        onPressed: () => _mostrarFormulario(context, null, null),
         backgroundColor: acDark,
         icon: const Icon(Icons.add),
         label: const Text('Nuevo Partido', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }
-
-  // estado de partidos
 
   Widget _estadoBadge(String estado) {
     Color c;
@@ -175,56 +158,30 @@ class PartidosScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: c.withOpacity(0.3)),
       ),
-      child: Text(
-        estado.replaceAll('_', ' '),
-        style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.bold),
-      ),
+      child: Text(estado.replaceAll('_', ' '),
+          style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.bold)),
     );
   }
 
-  // snaclbar
-
   void _snack(BuildContext ctx, String msg, Color color) {
     ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: color,
+      content: Text(msg), backgroundColor: color,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ));
   }
 
-  //crear
-
-  void _crear(BuildContext context) {
-    _mostrarFormulario(context, null, null);
-  }
-
-  // editae
-
-  void _editar(BuildContext context, String id, Map<String, dynamic> data) {
-    _mostrarFormulario(context, id, data);
-  }
-
-  // CREAR / EDITAR
-
   void _mostrarFormulario(BuildContext context, String? docId, Map<String, dynamic>? data) {
-    // Valores iniciales
     String? equipoLocalId     = data?['equipoLocalId']     as String?;
     String? equipoVisitanteId = data?['equipoVisitanteId'] as String?;
     String? arbitroId         = data?['arbitroId']         as String?;
     String  estado            = data?['estado']            as String? ?? 'programado';
     DateTime? fechaHora;
-    String  golLocal          = data?['golLocal']?.toString()     ?? '';
-    String  golVisitante      = data?['golVisitante']?.toString() ?? '';
-
-    // Parsear fecha si existe
     if (data?['fecha'] != null) {
       try { fechaHora = DateTime.parse(data!['fecha']); } catch (_) {}
     }
-
-    final golLocalCtrl     = TextEditingController(text: golLocal);
-    final golVisitanteCtrl = TextEditingController(text: golVisitante);
-
+    final golLocalCtrl     = TextEditingController(text: data?['golLocal']?.toString() ?? '');
+    final golVisitanteCtrl = TextEditingController(text: data?['golVisitante']?.toString() ?? '');
     final esEdicion = docId != null;
 
     showDialog(
@@ -240,50 +197,35 @@ class PartidosScreen extends StatelessWidget {
           ]),
           content: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-
-              // Equipo local
-              _labelSeccion('Equipo Local', Icons.home, acDark),
+              _label('Equipo Local', Icons.home),
               const SizedBox(height: 6),
               _SelectorEquipo(
-                selectedId: equipoLocalId,
-                hint: 'Seleccionar equipo local',
+                selectedId: equipoLocalId, hint: 'Equipo local',
                 onChanged: (v) => ss(() => equipoLocalId = v),
               ),
               const SizedBox(height: 12),
-
-              // Equipo visitante
-              _labelSeccion('Equipo Visitante', Icons.flight_land, acDark),
+              _label('Equipo Visitante', Icons.flight_land),
               const SizedBox(height: 6),
               _SelectorEquipo(
-                selectedId: equipoVisitanteId,
-                hint: 'Seleccionar equipo visitante',
+                selectedId: equipoVisitanteId, hint: 'Equipo visitante',
                 onChanged: (v) => ss(() => equipoVisitanteId = v),
               ),
               const SizedBox(height: 12),
-
-              //Árbitro
-              _labelSeccion('Árbitro', Icons.sports, acDark),
+              _label('Árbitro', Icons.sports),
               const SizedBox(height: 6),
-              _SelectorArbitro(
-                selectedId: arbitroId,
-                onChanged: (v) => ss(() => arbitroId = v),
-              ),
+              _SelectorArbitro(selectedId: arbitroId, onChanged: (v) => ss(() => arbitroId = v)),
               const SizedBox(height: 12),
-
-              // ── Fecha y hora
-              _labelSeccion('Fecha y Hora', Icons.calendar_today, acDark),
+              _label('Fecha y Hora', Icons.calendar_today),
               const SizedBox(height: 6),
               GestureDetector(
                 onTap: () async {
                   final fecha = await showDatePicker(
                     context: ctx,
                     initialDate: fechaHora ?? DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime(2030),
+                    firstDate: DateTime(2020), lastDate: DateTime(2030),
                     builder: (c, child) => Theme(
                       data: Theme.of(c).copyWith(
-                        colorScheme: const ColorScheme.light(
-                            primary: acDark, onPrimary: Colors.white),
+                        colorScheme: const ColorScheme.light(primary: acDark, onPrimary: Colors.white),
                       ),
                       child: child!,
                     ),
@@ -296,16 +238,13 @@ class PartidosScreen extends StatelessWidget {
                         : const TimeOfDay(hour: 18, minute: 0),
                     builder: (c, child) => Theme(
                       data: Theme.of(c).copyWith(
-                        colorScheme: const ColorScheme.light(
-                            primary: acDark, onPrimary: Colors.white),
+                        colorScheme: const ColorScheme.light(primary: acDark, onPrimary: Colors.white),
                       ),
                       child: child!,
                     ),
                   );
                   if (hora == null) return;
-                  ss(() {
-                    fechaHora = DateTime(fecha.year, fecha.month, fecha.day, hora.hour, hora.minute);
-                  });
+                  ss(() => fechaHora = DateTime(fecha.year, fecha.month, fecha.day, hora.hour, hora.minute));
                 },
                 child: Container(
                   padding: const EdgeInsets.all(12),
@@ -314,45 +253,32 @@ class PartidosScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(children: [
-                    Icon(Icons.calendar_today, color: acDark, size: 18),
+                    const Icon(Icons.calendar_today, color: acDark, size: 18),
                     const SizedBox(width: 10),
                     Text(
                       fechaHora != null
                           ? '${fechaHora!.day.toString().padLeft(2,'0')}/${fechaHora!.month.toString().padLeft(2,'0')}/${fechaHora!.year}  '
                           '${fechaHora!.hour.toString().padLeft(2,'0')}:${fechaHora!.minute.toString().padLeft(2,'0')}'
                           : 'Seleccionar fecha y hora',
-                      style: TextStyle(
-                        color: fechaHora != null ? Colors.black87 : Colors.grey.shade500,
-                      ),
+                      style: TextStyle(color: fechaHora != null ? Colors.black87 : Colors.grey.shade500),
                     ),
                   ]),
                 ),
               ),
               const SizedBox(height: 12),
-
-              // Estado
-              _labelSeccion('Estado', Icons.flag, acDark),
+              _label('Estado', Icons.flag),
               const SizedBox(height: 6),
-              _dropEstado(
-                value: estado,
-                onChanged: (v) => ss(() => estado = v!),
-              ),
+              _dropEstado(value: estado, onChanged: (v) => ss(() => estado = v!)),
               const SizedBox(height: 12),
-
-              // Resultado
-              _labelSeccion('Resultado (opcional)', Icons.sports_score, acDark),
+              _label('Resultado (opcional)', Icons.sports_score),
               const SizedBox(height: 6),
               Row(children: [
-                Expanded(
-                  child: _campoGol(golLocalCtrl, 'Goles local'),
-                ),
+                Expanded(child: _campoGol(golLocalCtrl, 'Goles local')),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text('–', style: TextStyle(fontSize: 20, color: Colors.grey.shade500)),
                 ),
-                Expanded(
-                  child: _campoGol(golVisitanteCtrl, 'Goles visit.'),
-                ),
+                Expanded(child: _campoGol(golVisitanteCtrl, 'Goles visit.')),
               ]),
             ]),
           ),
@@ -365,56 +291,39 @@ class PartidosScreen extends StatelessWidget {
               icon: Icon(esEdicion ? Icons.save : Icons.add, size: 16),
               label: Text(esEdicion ? 'Guardar' : 'Crear'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: acDark,
-                foregroundColor: Colors.white,
+                backgroundColor: acDark, foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () async {
                 if (equipoLocalId == null || equipoVisitanteId == null) {
-                  _snack(ctx, 'Selecciona ambos equipos', Colors.orange);
-                  return;
+                  _snack(ctx, 'Selecciona ambos equipos', Colors.orange); return;
                 }
                 if (equipoLocalId == equipoVisitanteId) {
-                  _snack(ctx, 'Los equipos no pueden ser el mismo', Colors.orange);
-                  return;
+                  _snack(ctx, 'Los equipos no pueden ser el mismo', Colors.orange); return;
                 }
                 if (fechaHora == null) {
-                  _snack(ctx, 'Selecciona fecha y hora', Colors.orange);
-                  return;
+                  _snack(ctx, 'Selecciona fecha y hora', Colors.orange); return;
                 }
-
-                final payload = <String, dynamic>{
-                  'equipoLocalId':     equipoLocalId,
-                  'equipoVisitanteId': equipoVisitanteId,
-                  'fecha':             fechaHora!.toIso8601String(),
-                  'estado':            estado,
-                  if (arbitroId != null) 'arbitroId': arbitroId,
-                  if (golLocalCtrl.text.trim().isNotEmpty)
-                    'golLocal': int.tryParse(golLocalCtrl.text.trim()) ?? 0,
-                  if (golVisitanteCtrl.text.trim().isNotEmpty)
-                    'golVisitante': int.tryParse(golVisitanteCtrl.text.trim()) ?? 0,
-                };
-
-                try {
-                  if (esEdicion) {
-                    await FirebaseFirestore.instance
-                        .collection('partidos')
-                        .doc(docId)
-                        .update(payload);
-                  } else {
-                    await FirebaseFirestore.instance
-                        .collection('partidos')
-                        .add(payload);
-                  }
-                  Navigator.pop(dCtx);
-                  _snack(
-                    context,
-                    esEdicion ? 'Partido actualizado' : '¡Partido creado!',
-                    acDark,
+                final prov = Provider.of<PartidosProvider>(ctx, listen: false);
+                final golL = int.tryParse(golLocalCtrl.text.trim());
+                final golV = int.tryParse(golVisitanteCtrl.text.trim());
+                bool ok;
+                if (esEdicion) {
+                  ok = await prov.editarPartido(
+                    id: docId!, equipoLocalId: equipoLocalId!, equipoVisitanteId: equipoVisitanteId!,
+                    fechaHora: fechaHora!, estado: estado, arbitroId: arbitroId,
+                    golLocal: golL, golVisitante: golV,
                   );
-                } catch (e) {
-                  _snack(ctx, 'Error: $e', Colors.red);
+                } else {
+                  ok = await prov.crearPartido(
+                    equipoLocalId: equipoLocalId!, equipoVisitanteId: equipoVisitanteId!,
+                    fechaHora: fechaHora!, estado: estado, arbitroId: arbitroId,
+                    golLocal: golL, golVisitante: golV,
+                  );
                 }
+                Navigator.pop(dCtx);
+                _snack(context, ok ? (esEdicion ? 'Partido actualizado' : '¡Partido creado!') : 'Error',
+                    ok ? acDark : Colors.red);
               },
             ),
           ],
@@ -423,37 +332,29 @@ class PartidosScreen extends StatelessWidget {
     );
   }
 
-  //ELIMINAR
-
   void _eliminar(BuildContext context, String id) {
     showDialog(
       context: context,
       builder: (dCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Eliminar Partido'),
-        content: const Text('¿Estás seguro de que quieres eliminar este partido? Esta acción no se puede deshacer.'),
+        content: const Text('¿Estás seguro? Esta acción no se puede deshacer.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dCtx),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(dCtx),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
           ElevatedButton.icon(
             icon: const Icon(Icons.delete, size: 16),
             label: const Text('Eliminar'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: Colors.red, foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () async {
-              try {
-                await FirebaseFirestore.instance.collection('partidos').doc(id).delete();
-                Navigator.pop(dCtx);
-                _snack(context, 'Partido eliminado', Colors.red.shade700);
-              } catch (e) {
-                Navigator.pop(dCtx);
-                _snack(context, 'Error al eliminar: $e', Colors.red);
-              }
+              final prov = Provider.of<PartidosProvider>(context, listen: false);
+              final ok = await prov.eliminarPartido(id);
+              Navigator.pop(dCtx);
+              _snack(context, ok ? 'Partido eliminado' : 'Error al eliminar',
+                  ok ? Colors.red.shade700 : Colors.red);
             },
           ),
         ],
@@ -461,105 +362,74 @@ class PartidosScreen extends StatelessWidget {
     );
   }
 
+  Widget _label(String label, IconData icon) => Row(children: [
+    Icon(icon, size: 15, color: acDark),
+    const SizedBox(width: 6),
+    Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: acDark)),
+  ]);
 
-  Widget _labelSeccion(String label, IconData icon, Color color) {
-    return Row(children: [
-      Icon(icon, size: 15, color: color),
-      const SizedBox(width: 6),
-      Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
-    ]);
-  }
+  Widget _dropEstado({required String value, required ValueChanged<String?> onChanged}) =>
+      Container(
+        decoration: BoxDecoration(border: Border.all(color: acDark), borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: value, isExpanded: true,
+            icon: const Icon(Icons.arrow_drop_down, color: acDark),
+            items: const [
+              DropdownMenuItem(value: 'programado', child: Text('Programado')),
+              DropdownMenuItem(value: 'en_curso',   child: Text('En curso')),
+              DropdownMenuItem(value: 'finalizado', child: Text('Finalizado')),
+              DropdownMenuItem(value: 'cancelado',  child: Text('Cancelado')),
+            ],
+            onChanged: onChanged,
+          ),
+        ),
+      );
 
-  Widget _dropEstado({required String value, required ValueChanged<String?> onChanged}) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: acDark),
+  Widget _campoGol(TextEditingController ctrl, String label) => TextField(
+    controller: ctrl, keyboardType: TextInputType.number, textAlign: TextAlign.center,
+    decoration: InputDecoration(
+      labelText: label, labelStyle: const TextStyle(fontSize: 11),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: acDark, width: 2),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isExpanded: true,
-          icon: const Icon(Icons.arrow_drop_down, color: acDark),
-          items: const [
-            DropdownMenuItem(value: 'programado',  child: Text('  Programado')),
-            DropdownMenuItem(value: 'en_curso',    child: Text('  En curso')),
-            DropdownMenuItem(value: 'finalizado',  child: Text('  Finalizado')),
-            DropdownMenuItem(value: 'cancelado',   child: Text('  Cancelado')),
-          ],
-          onChanged: onChanged,
-        ),
-      ),
-    );
-  }
-
-  Widget _campoGol(TextEditingController ctrl, String label) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: TextInputType.number,
-      textAlign: TextAlign.center,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(fontSize: 11),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: acDark, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      ),
-    );
-  }
+      contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+    ),
+  );
 }
-
-//Selector de equipo
 
 class _SelectorEquipo extends StatelessWidget {
   final String? selectedId;
   final String  hint;
   final ValueChanged<String?> onChanged;
-
-  const _SelectorEquipo({
-    required this.selectedId,
-    required this.hint,
-    required this.onChanged,
-  });
+  const _SelectorEquipo({required this.selectedId, required this.hint, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<QuerySnapshot>(
       future: FirebaseFirestore.instance.collection('equipos').get(),
       builder: (_, snap) {
-        if (!snap.hasData) {
-          return Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border.all(color: PartidosScreen.acDark),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const LinearProgressIndicator(color: PartidosScreen.acDark),
-          );
-        }
-
+        if (!snap.hasData) return const LinearProgressIndicator(color: Color(0xFFD946EF));
         return Container(
           decoration: BoxDecoration(
-            border: Border.all(color: PartidosScreen.acDark),
+            border: Border.all(color: const Color(0xFFD946EF)),
             borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: selectedId,
-              isExpanded: true,
+              value: selectedId, isExpanded: true,
               hint: Text(hint, style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
-              icon: const Icon(Icons.arrow_drop_down, color: PartidosScreen.acDark),
+              icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFD946EF)),
               items: snap.data!.docs.map((doc) {
                 final d = doc.data() as Map<String, dynamic>;
                 return DropdownMenuItem<String>(
                   value: doc.id,
                   child: Row(children: [
-                    const Icon(Icons.groups, size: 16, color: PartidosScreen.acDark),
+                    const Icon(Icons.groups, size: 16, color: Color(0xFFD946EF)),
                     const SizedBox(width: 8),
                     Text(d['nombre'] ?? doc.id),
                   ]),
@@ -574,49 +444,33 @@ class _SelectorEquipo extends StatelessWidget {
   }
 }
 
-//Selector de árbitro
-
 class _SelectorArbitro extends StatelessWidget {
   final String? selectedId;
   final ValueChanged<String?> onChanged;
-
   const _SelectorArbitro({required this.selectedId, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<QuerySnapshot>(
       future: FirebaseFirestore.instance
-          .collection('usuarios')
-          .where('rol', isEqualTo: 'arbitro')
-          .get(),
+          .collection('usuarios').where('rol', isEqualTo: 'arbitro').get(),
       builder: (_, snap) {
-        if (!snap.hasData) {
-          return Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border.all(color: PartidosScreen.acDark),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const LinearProgressIndicator(color: PartidosScreen.acDark),
-          );
-        }
-
+        if (!snap.hasData) return const LinearProgressIndicator(color: Color(0xFFD946EF));
         return Container(
           decoration: BoxDecoration(
-            border: Border.all(color: PartidosScreen.acDark),
+            border: Border.all(color: const Color(0xFFD946EF)),
             borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: selectedId,
-              isExpanded: true,
+              value: selectedId, isExpanded: true,
               hint: Row(children: [
-                const Icon(Icons.sports, size: 16, color: PartidosScreen.acDark),
+                const Icon(Icons.sports, size: 16, color: Color(0xFFD946EF)),
                 const SizedBox(width: 8),
                 Text('Árbitro (opcional)', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
               ]),
-              icon: const Icon(Icons.arrow_drop_down, color: PartidosScreen.acDark),
+              icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFD946EF)),
               items: [
                 const DropdownMenuItem<String>(value: null, child: Text('Sin árbitro')),
                 ...snap.data!.docs.map((doc) {
@@ -624,7 +478,7 @@ class _SelectorArbitro extends StatelessWidget {
                   return DropdownMenuItem<String>(
                     value: doc.id,
                     child: Row(children: [
-                      const Icon(Icons.sports, size: 16, color: PartidosScreen.acDark),
+                      const Icon(Icons.sports, size: 16, color: Color(0xFFD946EF)),
                       const SizedBox(width: 8),
                       Text(d['nombre'] ?? doc.id),
                     ]),
@@ -640,8 +494,6 @@ class _SelectorArbitro extends StatelessWidget {
   }
 }
 
-// VS con nombres de equipos
-
 class _NombresVs extends StatelessWidget {
   final String? localId, visitanteId;
   const _NombresVs({this.localId, this.visitanteId});
@@ -651,36 +503,25 @@ class _NombresVs extends StatelessWidget {
     return FutureBuilder<List<String>>(
       future: Future.wait([_nombre(localId), _nombre(visitanteId)]),
       builder: (_, snap) {
-        if (!snap.hasData) {
-          return const Text('Cargando...', style: TextStyle(fontSize: 13, color: Colors.grey));
-        }
-        final local     = snap.data![0];
-        final visitante = snap.data![1];
+        if (!snap.hasData) return const Text('Cargando...', style: TextStyle(fontSize: 13, color: Colors.grey));
         return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Flexible(
-            child: Text(local,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right),
-          ),
+          Flexible(child: Text(snap.data![0],
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              overflow: TextOverflow.ellipsis, textAlign: TextAlign.right)),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 8),
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: PartidosScreen.acDark.withOpacity(0.15),
+              color: const Color(0xFFD946EF).withOpacity(0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Text('VS',
-                style: TextStyle(
-                    fontWeight: FontWeight.w900, fontSize: 13,
-                    color: PartidosScreen.acDark, letterSpacing: 1)),
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13,
+                    color: Color(0xFFD946EF), letterSpacing: 1)),
           ),
-          Flexible(
-            child: Text(visitante,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.left),
-          ),
+          Flexible(child: Text(snap.data![1],
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              overflow: TextOverflow.ellipsis, textAlign: TextAlign.left)),
         ]);
       },
     );
@@ -691,13 +532,9 @@ class _NombresVs extends StatelessWidget {
     try {
       final doc = await FirebaseFirestore.instance.collection('equipos').doc(id).get();
       return (doc.data() as Map<String, dynamic>?)?['nombre'] ?? id;
-    } catch (_) {
-      return id;
-    }
+    } catch (_) { return id; }
   }
 }
-
-// Chip de árbitro
 
 class _ArbitroChip extends StatelessWidget {
   final String arbitroId;
@@ -708,8 +545,7 @@ class _ArbitroChip extends StatelessWidget {
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance.collection('usuarios').doc(arbitroId).get(),
       builder: (_, snap) {
-        final d      = snap.data?.data() as Map<String, dynamic>?;
-        final nombre = d?['nombre'] ?? 'Árbitro';
+        final d = snap.data?.data() as Map<String, dynamic>?;
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
@@ -720,7 +556,8 @@ class _ArbitroChip extends StatelessWidget {
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(Icons.sports, size: 12, color: Colors.grey.shade600),
             const SizedBox(width: 4),
-            Text(nombre, style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
+            Text(d?['nombre'] ?? 'Árbitro',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
           ]),
         );
       },
